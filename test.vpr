@@ -2,8 +2,15 @@ namespace cheeto {
     constexpr x: i32 = 69;
 }
 
+enum Test {
+    A,
+    B,
+    C
+}
+
 func @main() -> i32 {
-    return cheeto::x;
+    let test: Test = Test::B;
+    let name: i8* = test.name;
 }
 
 using struct Vec3 {

@@ -2,6 +2,9 @@
 
 
 #include "parser/ast/expression/ScopeResolution.h"
+
+#include <iostream>
+
 #include "parser/ast/expression/VariableExpression.h"
 
 #include "symbol/Identifier.h"

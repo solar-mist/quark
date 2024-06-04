@@ -2,6 +2,7 @@
 
 #include "parser/ast/statement/VariableDeclaration.h"
 
+#include <iostream>
 #include <vipir/IR/Instruction/AllocaInst.h>
 #include <vipir/IR/Instruction/StoreInst.h>
 

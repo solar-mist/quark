@@ -66,7 +66,7 @@ namespace parser
         ConstexprStatementPtr parseConstExpr(bool exported);
         std::pair<std::vector<ASTNodePtr>, std::vector<GlobalSymbol>> parseImportStatement(bool exported);
         UsingDeclarationPtr parseUsingDeclaration(bool exported);
-        EnumDeclarationPtr parseEnumDeclaration(bool exported);
+        EnumDeclarationPtr parseEnumDeclaration(bool exported, std::vector<GlobalAttribute> attributes);
 
         void parseAttributes(std::vector<GlobalAttribute>& attributes);
     };

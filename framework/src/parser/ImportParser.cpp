@@ -143,7 +143,7 @@ namespace parser
                 return parseUsingDeclaration(exported);
 
             case lexing::TokenType::EnumKeyword:
-                return parseEnumDeclaration(exported);
+                return parseEnumDeclaration(exported, attributes);
             default:
                 mDiag.compilerError(current().getStart(), current().getEnd(), "Unexpected token. Expected global statement");
         }
@@ -594,7 +594,7 @@ namespace parser
 
 
 
-    EnumDeclarationPtr ImportParser::parseEnumDeclaration(bool exported)
+    EnumDeclarationPtr ImportParser::parseEnumDeclaration(bool exported, std::vector<GlobalAttribute> attributes)
     {
         consume(); // enum
 
@@ -635,7 +635,7 @@ namespace parser
             {
                 mSymbols.push_back({field.name, nullptr});
             }
-            return std::make_unique<EnumDeclaration>(std::move(names), std::move(fields));
+            return std::make_unique<EnumDeclaration>(std::move(attributes), std::move(names), std::move(fields));
         }
         return nullptr;
     }
@@ -651,6 +651,10 @@ namespace parser
             if (token.getText() == "NoMangle")
             {
                 attributes.push_back(GlobalAttribute(GlobalAttributeType::NoMangle));
+            }
+            else if (token.getText() == "GenerateNames")
+            {
+                attributes.push_back(GlobalAttribute(GlobalAttributeType::GenerateNames));
             }
             else
             {

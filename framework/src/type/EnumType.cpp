@@ -3,13 +3,21 @@
 
 #include "type/EnumType.h"
 
+#include <algorithm>
 #include <unordered_map>
 
-EnumType::EnumType(std::vector<std::string> names)
+EnumType::EnumType(std::vector<std::string> names, bool generatedNames)
     : Type(names.back())
     , mNames(std::move(names))
+    , mGeneratedNames(generatedNames)
 {
 }
+
+bool EnumType::hsGeneratedNames() const
+{
+    return mGeneratedNames;
+}
+
 
 int EnumType::getSize() const
 {
@@ -39,9 +47,20 @@ bool EnumType::isEnumType() const
 }
 
 extern std::unordered_map<std::string, std::unique_ptr<Type>> types;
-EnumType* EnumType::Create(std::vector<std::string> names)
+EnumType* EnumType::Create(std::vector<std::string> names, bool generatedNames)
 {
-    std::unique_ptr<Type> type = std::make_unique<EnumType>(names);
+    auto it = std::find_if(types.begin(), types.end(), [&names](const auto& type){
+        if (EnumType* enumType = dynamic_cast<EnumType*>(type.second.get())) {
+            return enumType->mNames == names;
+        }
+        return false;
+    });
+
+    if (it != types.end()) {
+        return static_cast<EnumType*>(it->second.get());
+    }
+
+    std::unique_ptr<Type> type = std::make_unique<EnumType>(names, generatedNames);
     std::string mangleID = type->getMangleID();
     types[mangleID] = std::move(type);
 

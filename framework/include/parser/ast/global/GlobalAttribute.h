@@ -7,7 +7,8 @@ namespace parser
 {
     enum class GlobalAttributeType
     {
-        NoMangle
+        NoMangle,
+        GenerateNames
     };
 
     class GlobalAttribute

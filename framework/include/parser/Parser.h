@@ -89,7 +89,7 @@ namespace parser
         GlobalDeclarationPtr parseGlobalDeclaration();
         std::pair<std::vector<ASTNodePtr>, std::vector<GlobalSymbol>> parseImportStatement();
         UsingDeclarationPtr parseUsingDeclaration();
-        EnumDeclarationPtr parseEnumDeclaration();
+        EnumDeclarationPtr parseEnumDeclaration(std::vector<GlobalAttribute> attributes);
 
         CompoundStatementPtr parseCompoundStatement();
         ReturnStatementPtr parseReturnStatement();
