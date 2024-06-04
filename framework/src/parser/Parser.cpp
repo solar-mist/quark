@@ -1169,6 +1169,12 @@ namespace parser
             return std::make_unique<VariableExpression>(std::move(name), local->type, std::move(nameToken));
         }
 
+        if (mScope->findOwner() != nullptr && mScope->findOwner()->hasField(name))
+        {
+            std::string nameCopy = name;
+            return std::make_unique<VariableExpression>(std::move(nameCopy), mScope->findOwner()->getField(name)->type, std::move(nameToken));
+        }
+
         auto it = std::find_if(mSymbols.begin(), mSymbols.end(), [&name](const GlobalSymbol& symbol) {
             return symbol.name == name;
         });

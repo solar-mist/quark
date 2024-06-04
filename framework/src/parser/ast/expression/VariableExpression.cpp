@@ -4,8 +4,15 @@
 
 #include "symbol/Identifier.h"
 
+#include "type/PointerType.h"
+
 #include <vipir/IR/Instruction/AllocaInst.h>
+#include <vipir/IR/Instruction/GEPInst.h>
 #include <vipir/IR/Instruction/LoadInst.h>
+#include <vipir/IR/Instruction/PtrCastInst.h>
+
+#include "vipir/Type/PointerType.h"
+
 
 namespace parser
 {
@@ -38,15 +45,32 @@ namespace parser
 
             return builder.CreateLoad(local->alloca);
         }
+        else if (scope->findOwner() != nullptr && scope->findOwner()->hasField(mName))
+        {
+            StructType* structType = scope->findOwner();
+            vipir::Value* self = builder.CreateLoad(scope->findVariable("this")->alloca);
+            vipir::Value* gep = builder.CreateStructGEP(self, structType->getFieldOffset(mName));
+
+            if (structType->getField(mName)->type->isPointerType())
+            {
+                if (static_cast<PointerType*>(structType->getField(mName)->type)->getBaseType() == structType)
+                {
+                    vipir::Type* type = vipir::PointerType::GetPointerType(vipir::PointerType::GetPointerType(structType->getVipirType()));
+                    gep = builder.CreatePtrCast(gep, type);
+                }
+            }
+
+            return builder.CreateLoad(gep);
+        }
         else
         {
             for (auto& symbol : symbols)
             {
-                if (GlobalFunctions.find(symbol) != GlobalFunctions.end())
+                if (GlobalFunctions.contains(symbol))
                 {
                     return GlobalFunctions.at(symbol).function;
                 }
-                else if (GlobalVariables.find(symbol) != GlobalVariables.end())
+                else if (GlobalVariables.contains(symbol))
                 {
                     vipir::Value* value = GlobalVariables[symbol].global;
                     if (value->isConstant()) return value;

@@ -17,9 +17,10 @@ using struct Vec3 {
 
     func @getX() -> i64 = this->x;
 
-    func @getY() -> i64 = this->y;
+    func @getY() -> i64 = y;
 
     func @getZ() -> i64 {
+        let z: i64 = 69;
         return this->z;
     }
 }

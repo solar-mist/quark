@@ -10,8 +10,12 @@
 
 #include <vipir/IR/BasicBlock.h>
 #include <vipir/Type/FunctionType.h>
+#include <vipir/IR/Instruction/GEPInst.h>
+#include <vipir/IR/Instruction/PtrCastInst.h>
 
 #include <vector>
+
+#include "vipir/Type/PointerType.h"
 
 namespace parser
 {
@@ -79,6 +83,7 @@ namespace parser
 
     vipir::Value* StructDeclaration::emit(vipir::IRBuilder& builder, vipir::Module& module, Scope* scope, diagnostic::Diagnostics& diag)
     {
+        StructType* structType = static_cast<StructType*>(mType);
         for (StructMethod& method : mMethods)
         {
             std::vector<Type*> manglingArguments;
@@ -114,10 +119,10 @@ namespace parser
 
             int index = 0;
 
-            vipir::AllocaInst* alloca = builder.CreateAlloca(vipir::Type::GetPointerType(mType->getVipirType()));
-            scope->locals["this"].alloca = alloca;
+            vipir::AllocaInst* self = builder.CreateAlloca(vipir::Type::GetPointerType(mType->getVipirType()));
+            scope->locals["this"].alloca = self;
 
-            builder.CreateStore(alloca, func->getArgument(index++));
+            builder.CreateStore(self, func->getArgument(index++));
 
             for (auto& argument : method.arguments)
             {
