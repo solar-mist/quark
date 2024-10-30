@@ -1,10 +1,5 @@
-func puts(arg: i8*) -> i32;
+func x(a: i32) -> i32;
 
-func main(argc: i32) -> i8 {
-    let str: i8* = "hello";
-
-    let f: (i8*)* -> i32 = &puts;
-    let fp: (i8*)** -> i32 = &f;
-    let g: (i8*)* -> i32 = *fp;
-    return g(str);
+func y() -> i32 {
+	return x(1) + 2;
 }
