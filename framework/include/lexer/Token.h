@@ -21,6 +21,8 @@ namespace lexer
         TrueKeyword,
         FalseKeyword,
         PureKeyword,
+        ExportKeyword,
+        ImportKeyword,
 
         // Symbols
         Plus,
@@ -46,6 +48,7 @@ namespace lexer
         Semicolon,
         Colon,
         Comma,
+        Dot,
 
         Ampersand,
 

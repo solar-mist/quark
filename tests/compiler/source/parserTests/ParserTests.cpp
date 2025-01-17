@@ -121,7 +121,7 @@ namespace ParserTests
                 TokenConstructor(lexer::TokenType::RightBrace),
             });
 
-        auto result = RunTestCase(testCase, testCase.introspector.GetParser_parseFunction(), false);
+        auto result = RunTestCase(testCase, testCase.introspector.GetParser_parseFunction(), false, false);
 
         auto& globalNode = result.ast;
         auto functionNode = dynamic_cast<parser::Function*>(globalNode.get());

@@ -39,6 +39,10 @@ namespace lexer
                 return "false";
             case TokenType::PureKeyword:
                 return "pure";
+            case TokenType::ExportKeyword:
+                return "export";
+            case TokenType::ImportKeyword:
+                return "import";
             case TokenType::Plus:
                 return "+";
             case TokenType::Minus:
@@ -75,6 +79,8 @@ namespace lexer
                 return ":";
             case TokenType::Comma:
                 return ",";
+            case TokenType::Dot:
+                return ".";
             case TokenType::Equal:
                 return "=";
             case TokenType::Ampersand:

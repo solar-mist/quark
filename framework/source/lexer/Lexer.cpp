@@ -25,6 +25,8 @@ namespace lexer
         { "true",   TokenType::TrueKeyword },
         { "false",  TokenType::FalseKeyword },
         { "pure",   TokenType::PureKeyword },
+        { "export",   TokenType::ExportKeyword },
+        { "import",   TokenType::ImportKeyword },
         { "i8",     TokenType::TypeKeyword },
         { "i16",    TokenType::TypeKeyword },
         { "i32",    TokenType::TypeKeyword },
@@ -274,6 +276,8 @@ namespace lexer
                 return Token(":", TokenType::Colon, start, mSourceLocation);
             case ',':
                 return Token(",", TokenType::Comma, start, mSourceLocation);
+            case '.':
+                return Token(".", TokenType::Dot, start, mSourceLocation);
 
             case '=':
                 if (peek(1) == '=')

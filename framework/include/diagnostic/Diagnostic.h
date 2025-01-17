@@ -28,6 +28,7 @@ namespace diagnostic
 
         void setText(std::string_view text);
         void setWarning(bool enable, std::string_view warning);
+        void setImported(bool imported);
 
         [[noreturn]] void fatalError(std::string_view message);
 
@@ -37,6 +38,7 @@ namespace diagnostic
     private:
         std::string_view mText;
         std::vector<std::string_view> mWarnings;
+        bool mImported{ false };
 
         int getLinePosition(int lineNumber);
     };

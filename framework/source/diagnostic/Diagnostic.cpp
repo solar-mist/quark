@@ -43,6 +43,11 @@ namespace diagnostic
         if (!enable && it != mWarnings.end()) mWarnings.erase(it);
     }
 
+    void Diagnostics::setImported(bool imported)
+    {
+        mImported = imported;
+    }
+
 
     void Diagnostics::fatalError(std::string_view message)
     {

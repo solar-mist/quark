@@ -107,7 +107,7 @@ void Option::ParseOptimizingFlags(const std::vector<Option>& options, vipir::Mod
                 case '1':
                     module.getPassManager().insertBefore(vipir::PassType::LIREmission, std::make_unique<vipir::opt::DCEPass>());
                     module.getPassManager().insertBefore(vipir::PassType::DeadCodeElimination, std::make_unique<vipir::ConstantFoldingPass>());
-                    module.getPassManager().insertBefore(vipir::PassType::DeadCodeElimination, std::make_unique<vipir::opt::Mem2RegPass>());
+                    module.getPassManager().insertAfter(vipir::PassType::DeadCodeElimination, std::make_unique<vipir::opt::Mem2RegPass>());
                     module.getPassManager().insertBefore(vipir::PassType::LIRCodegen, std::make_unique<vipir::opt::PeepholePass>());
                     break;
 

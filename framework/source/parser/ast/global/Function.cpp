@@ -16,7 +16,7 @@ namespace parser
     }
     
     
-    Function::Function(bool pure, std::string name, FunctionType* type, std::vector<FunctionArgument> arguments, std::vector<ASTNodePtr> body, ScopePtr scope, lexer::Token token)
+    Function::Function(bool exported, bool pure, std::string name, FunctionType* type, std::vector<FunctionArgument> arguments, std::vector<ASTNodePtr> body, ScopePtr scope, lexer::Token token)
         : ASTNode(scope->parent, type, token)
         , mPure(pure)
         , mName(std::move(name))
@@ -26,6 +26,7 @@ namespace parser
     {
         mSymbolId = mScope->symbols.emplace_back(mName, mType).id;
         mScope->getSymbol(mSymbolId)->pure = mPure;
+        mScope->getSymbol(mSymbolId)->exported = exported;
         for (auto& argument : mArguments)
         {
             mOwnScope->symbols.emplace_back(argument.name, argument.type);

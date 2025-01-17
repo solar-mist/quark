@@ -14,8 +14,10 @@ set(SOURCES
 
     "source/symbol/Scope.cpp"
     "source/symbol/Mangle.cpp"
+    "source/symbol/ImportManager.cpp"
 
     "source/parser/Parser.cpp"
+    "source/parser/SymbolParser.cpp"
     "source/parser/ast/ASTNode.cpp"
     "source/parser/ast/global/Function.cpp"
     "source/parser/ast/statement/ReturnStatement.cpp"
@@ -48,8 +50,10 @@ set(HEADERS
 
     "include/symbol/Scope.h"
     "include/symbol/Mangle.h"
+    "include/symbol/ImportManager.h"
 
     "include/parser/Parser.h"
+    "include/parser/SymbolParser.h"
     "include/parser/ast/ASTNode.h"
     "include/parser/ast/global/Function.h"
     "include/parser/ast/statement/ReturnStatement.h"

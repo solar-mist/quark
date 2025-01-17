@@ -1,4 +1,4 @@
-int _F4putspb(char* str)
+int _F5printpb(char* str)
 {
     return puts(str);
 }

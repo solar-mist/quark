@@ -1,7 +1,7 @@
 // Copyright 2024 solar-mist
 
-#ifndef VIPER_FRAMEWORK_PARSER_PARSER_H
-#define VIPER_FRAMEWORK_PARSER_PARSER_H 1
+#ifndef VIPER_FRAMEWORK_PARSER_SYMBOL_PARSER_H
+#define VIPER_FRAMEWORK_PARSER_SYMBOL_PARSER_H 1
 
 #include "parser/ast/ASTNode.h"
 
@@ -30,11 +30,10 @@
 
 namespace parser
 {
-    class Parser
+    class SymbolParser
     {
-    friend class ::ASTNodeIntrospector;
     public:
-        Parser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, Scope* globalScope);
+        SymbolParser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, Scope* globalScope);
 
         std::vector<ASTNodePtr> parse();
 
@@ -48,34 +47,18 @@ namespace parser
 
         std::function<void(ASTNodePtr&)> mInsertNodeFn;
 
-
         lexer::Token current() const;
         lexer::Token consume();
         lexer::Token peek(int offset) const;
 
         void expectToken(lexer::TokenType tokenType);
 
-        int getBinaryOperatorPrecedence(lexer::TokenType tokenType);
-        int getPrefixUnaryOperatorPrecedence(lexer::TokenType tokenType);
-        int getPostfixUnaryOperatorPrecedence(lexer::TokenType tokenType);
-
         Type* parseType();
 
         ASTNodePtr parseGlobal(bool exported = false);
-        ASTNodePtr parseExpression(int precedence = 1);
-        ASTNodePtr parsePrimary();
 
         FunctionPtr parseFunction(bool pure, bool exported);
-        void parseImport();
-
-        ReturnStatementPtr parseReturnStatement();
-        VariableDeclarationPtr parseVariableDeclaration();
-        IfStatementPtr parseIfStatement();
-
-        IntegerLiteralPtr parseIntegerLiteral();
-        VariableExpressionPtr parseVariableExpression();
-        CallExpressionPtr parseCallExpression(ASTNodePtr callee);
-        StringLiteralPtr parseStringLiteral();
+        void parseImport(bool exported);
     };
 }
 

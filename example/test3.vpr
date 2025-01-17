@@ -1,0 +1,5 @@
+import example.test2;
+
+export func x() -> i32 {
+	return y();
+}

@@ -73,6 +73,14 @@ Symbol* Scope::resolveSymbol(std::string name)
         });
 
         if (it != current->symbols.end()) return &*it;
+
+        for (auto& scope : current->importedScopes)
+        {
+            if (auto sym = scope->resolveSymbol(name))
+            {
+                if (sym->exported) return sym;
+            }
+        }
         current = current->parent;
     }
     return nullptr;
@@ -96,6 +104,16 @@ std::vector<Symbol*> Scope::getCandidateFunctions(std::string name)
             it = std::find_if(it+1, current->symbols.end(), [&name](const auto& symbol){
                 return symbol.name == name;
             });
+        }
+
+        for (auto& scope : current->importedScopes)
+        {
+            auto candidates = scope->getCandidateFunctions(name);
+            std::erase_if(candidates, [](Symbol* symbol) {
+                return !symbol->exported;
+            });
+
+            std::copy(candidates.begin(), candidates.end(), std::back_inserter(candidateFunctions));
         }
         current = current->parent;
     }

@@ -26,6 +26,7 @@ struct Symbol
     std::vector<std::pair<vipir::BasicBlock*, vipir::Value*> > values;
     unsigned long id;
     bool pure{ false };
+    bool exported;
 };
 
 struct Scope
@@ -46,6 +47,8 @@ struct Scope
 
     Type* currentReturnType;
     std::vector<Symbol> symbols;
+
+    std::vector<std::unique_ptr<Scope> > importedScopes;
 };
 using ScopePtr = std::unique_ptr<Scope>;
 

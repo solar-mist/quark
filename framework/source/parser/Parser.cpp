@@ -6,7 +6,10 @@
 
 #include "type/PointerType.h"
 
+#include "symbol/ImportManager.h"
+
 #include <cinttypes>
+#include <filesystem>
 #include <format>
 
 namespace parser
@@ -22,6 +25,10 @@ namespace parser
     std::vector<ASTNodePtr> Parser::parse()
     {
         std::vector<ASTNodePtr> ast;
+
+        mInsertNodeFn = [&ast](ASTNodePtr& node) {
+            ast.push_back(std::move(node));
+        };
 
         while (mPosition < mTokens.size())
         {
@@ -166,16 +173,26 @@ namespace parser
     }
 
 
-    ASTNodePtr Parser::parseGlobal()
+    ASTNodePtr Parser::parseGlobal(bool exported)
     {
         switch (current().getTokenType())
         {
+            case lexer::TokenType::ExportKeyword:
+                consume();
+                return parseGlobal(true);
+
+            case lexer::TokenType::ImportKeyword:
+            {
+                parseImport();
+                return nullptr;
+            }
+
             case lexer::TokenType::PureKeyword:
                 consume();
                 expectToken(lexer::TokenType::FuncKeyword);
-                return parseFunction(true);
+                return parseFunction(true, exported);
             case lexer::TokenType::FuncKeyword:
-                return parseFunction(false);
+                return parseFunction(false, exported);
 
             case lexer::TokenType::EndOfFile:
                 consume();
@@ -282,7 +299,7 @@ namespace parser
     }
 
 
-    FunctionPtr Parser::parseFunction(bool pure)
+    FunctionPtr Parser::parseFunction(bool pure, bool exported)
     {
         auto token = consume(); // FuncKeyword
 
@@ -320,7 +337,7 @@ namespace parser
         {
             consume();
             mActiveScope = scope->parent;
-            return std::make_unique<Function>(pure, std::move(name), functionType, std::move(arguments), std::vector<ASTNodePtr>(), std::move(scope), std::move(token));
+            return std::make_unique<Function>(exported, pure, std::move(name), functionType, std::move(arguments), std::vector<ASTNodePtr>(), std::move(scope), std::move(token));
         }
 
         std::vector<ASTNodePtr> body;
@@ -337,7 +354,36 @@ namespace parser
 
         mActiveScope = scope->parent;
 
-        return std::make_unique<Function>(pure, std::move(name), functionType, std::move(arguments), std::move(body), std::move(scope), std::move(token));
+        return std::make_unique<Function>(exported, pure, std::move(name), functionType, std::move(arguments), std::move(body), std::move(scope), std::move(token));
+    }
+
+    void Parser::parseImport()
+    {
+        consume(); // ImportKeyword
+
+        std::filesystem::path path;
+        while (current().getTokenType() != lexer::TokenType::Semicolon)
+        {
+            expectToken(lexer::TokenType::Identifier);
+            path /= consume().getText();
+
+            if (current().getTokenType() != lexer::TokenType::Semicolon)
+            {
+                expectToken(lexer::TokenType::Dot);
+                consume();
+            }
+        }
+        consume();
+
+        ScopePtr scope = std::make_unique<Scope>(nullptr, "", true);
+
+        ImportManager importManager;
+        auto nodes = importManager.resolveImports(path, scope.get());
+        for (auto& node : nodes)
+        {
+            mInsertNodeFn(node);
+        }
+        mActiveScope->importedScopes.push_back(std::move(scope));
     }
 
 
