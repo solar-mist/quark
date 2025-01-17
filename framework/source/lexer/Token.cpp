@@ -43,6 +43,8 @@ namespace lexer
                 return "export";
             case TokenType::ImportKeyword:
                 return "import";
+            case TokenType::ClassKeyword:
+                return "class";
             case TokenType::Plus:
                 return "+";
             case TokenType::Minus:

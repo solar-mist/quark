@@ -1,5 +1,10 @@
 import example.test2;
 
+class Thing {
+    field: i32;
+}
+
 func main() -> i32 {
+    let t: Thing;
     return x();
 }

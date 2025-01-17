@@ -5,6 +5,7 @@
 #include "parser/ast/expression/BooleanLiteral.h"
 
 #include "type/PointerType.h"
+#include "type/StructType.h"
 
 #include "symbol/ImportManager.h"
 
@@ -160,8 +161,20 @@ namespace parser
             return type;
         }
 
-        expectToken(lexer::TokenType::TypeKeyword);
-        auto type = Type::Get(std::string(consume().getText()));
+        Type* type = nullptr;
+        if (current().getTokenType() == lexer::TokenType::Identifier)
+        {
+            if (auto structType = StructType::Get(std::string(current().getText())))
+            {
+                consume();
+                type = structType;
+            }
+        }
+        if (!type) // No struct type was found
+        {
+            expectToken(lexer::TokenType::TypeKeyword);
+            type = Type::Get(std::string(consume().getText()));
+        }
 
         while (current().getTokenType() == lexer::TokenType::Star)
         {
@@ -193,6 +206,9 @@ namespace parser
                 return parseFunction(true, exported);
             case lexer::TokenType::FuncKeyword:
                 return parseFunction(false, exported);
+
+            case lexer::TokenType::ClassKeyword:
+                return parseClassDeclaration(exported);
 
             case lexer::TokenType::EndOfFile:
                 consume();
@@ -357,9 +373,42 @@ namespace parser
         return std::make_unique<Function>(exported, pure, std::move(name), functionType, std::move(arguments), std::move(body), std::move(scope), std::move(token));
     }
 
+    ClassDeclarationPtr Parser::parseClassDeclaration(bool exported)
+    {
+        auto token = consume(); // class
+
+        expectToken(lexer::TokenType::Identifier);
+        std::string name = std::string(consume().getText());
+
+        expectToken(lexer::TokenType::LeftBrace);
+        consume();
+
+        std::vector<ClassField> fields;
+        while (current().getTokenType() != lexer::TokenType::RightBrace)
+        {
+            expectToken(lexer::TokenType::Identifier);
+            std::string fieldName = std::string(consume().getText());
+
+            expectToken(lexer::TokenType::Colon);
+            consume();
+
+            Type* fieldType = parseType();
+            fields.push_back(ClassField(fieldType, std::move(fieldName)));
+
+            if (current().getTokenType() != lexer::TokenType::RightBrace)
+            {
+                expectToken(lexer::TokenType::Semicolon);
+                consume();
+            }
+        }
+        consume();
+
+        return std::make_unique<ClassDeclaration>(exported, std::move(name), std::move(fields), mActiveScope, std::move(token));
+    }
+
     void Parser::parseImport()
     {
-        consume(); // ImportKeyword
+        consume(); // import
 
         std::filesystem::path path;
         while (current().getTokenType() != lexer::TokenType::Semicolon)

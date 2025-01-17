@@ -20,6 +20,7 @@ set(SOURCES
     "source/parser/SymbolParser.cpp"
     "source/parser/ast/ASTNode.cpp"
     "source/parser/ast/global/Function.cpp"
+    "source/parser/ast/global/ClassDeclaration.cpp"
     "source/parser/ast/statement/ReturnStatement.cpp"
     "source/parser/ast/statement/VariableDeclaration.cpp"
     "source/parser/ast/statement/IfStatement.cpp"
@@ -38,6 +39,7 @@ set(SOURCES
     "source/type/FunctionType.cpp"
     "source/type/BooleanType.cpp"
     "source/type/PointerType.cpp"
+    "source/type/StructType.cpp"
     "source/type/ErrorType.cpp"
 
     "source/diagnostic/Diagnostic.cpp"
@@ -56,6 +58,7 @@ set(HEADERS
     "include/parser/SymbolParser.h"
     "include/parser/ast/ASTNode.h"
     "include/parser/ast/global/Function.h"
+    "include/parser/ast/global/ClassDeclaration.h"
     "include/parser/ast/statement/ReturnStatement.h"
     "include/parser/ast/statement/VariableDeclaration.h"
     "include/parser/ast/statement/IfStatement.h"
@@ -74,6 +77,7 @@ set(HEADERS
     "include/type/FunctionType.h"
     "include/type/BooleanType.h"
     "include/type/PointerType.h"
+    "include/type/StructType.h"
     "include/type/ErrorType.h"
 
     "include/diagnostic/Diagnostic.h"

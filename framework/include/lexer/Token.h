@@ -23,6 +23,7 @@ namespace lexer
         PureKeyword,
         ExportKeyword,
         ImportKeyword,
+        ClassKeyword,
 
         // Symbols
         Plus,

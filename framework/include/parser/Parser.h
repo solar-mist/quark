@@ -6,6 +6,7 @@
 #include "parser/ast/ASTNode.h"
 
 #include "parser/ast/global/Function.h"
+#include "parser/ast/global/ClassDeclaration.h"
 
 #include "parser/ast/statement/ReturnStatement.h"
 #include "parser/ast/statement/VariableDeclaration.h"
@@ -66,6 +67,7 @@ namespace parser
         ASTNodePtr parsePrimary();
 
         FunctionPtr parseFunction(bool pure, bool exported);
+        ClassDeclarationPtr parseClassDeclaration(bool exported);
         void parseImport();
 
         ReturnStatementPtr parseReturnStatement();
