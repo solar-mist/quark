@@ -6,5 +6,7 @@ class Thing {
 
 func main() -> i32 {
     let t: Thing;
-    return x();
+    let p: Thing* = &t;
+    p->field = 12;
+    return x(t.field);
 }

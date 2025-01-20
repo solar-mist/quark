@@ -79,6 +79,8 @@ namespace parser
         switch (tokenType) 
         {
             case lexer::TokenType::LeftParen:
+            case lexer::TokenType::Dot:
+            case lexer::TokenType::RightArrow:
                 return 90;
 
             case lexer::TokenType::Star:
@@ -266,6 +268,14 @@ namespace parser
             if (operatorToken.getTokenType() == lexer::TokenType::LeftParen)
             {
                 left = parseCallExpression(std::move(left));
+            }
+            else if (operatorToken.getTokenType() == lexer::TokenType::Dot)
+            {
+                left = parseMemberAccess(std::move(left), false);
+            }
+            else if (operatorToken.getTokenType() == lexer::TokenType::RightArrow)
+            {
+                left = parseMemberAccess(std::move(left), true);
             }
             else
             {
@@ -548,5 +558,14 @@ namespace parser
         text.pop_back();
 
         return std::make_unique<StringLiteral>(mActiveScope, std::move(text), std::move(token));
+    }
+
+    MemberAccessPtr Parser::parseMemberAccess(ASTNodePtr structNode, bool pointer)
+    {
+        expectToken(lexer::TokenType::Identifier);
+        auto token = consume();
+        std::string text = std::string(token.getText());
+
+        return std::make_unique<MemberAccess>(std::move(structNode), std::move(text), pointer, mActiveScope, peek(-2), std::move(token));
     }
 }

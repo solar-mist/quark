@@ -2,6 +2,8 @@
 
 #include "parser/ast/statement/VariableDeclaration.h"
 
+#include <vipir/IR/Instruction/AllocaInst.h>
+
 #include <algorithm>
 
 namespace parser
@@ -16,13 +18,29 @@ namespace parser
 
     vipir::Value* VariableDeclaration::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
     {
-        if (mInitValue)
+        if (mType->isStructType())
         {
-            vipir::Value* initValue = mInitValue->codegen(builder, module, diag);
             auto it = std::find_if(mScope->symbols.begin(), mScope->symbols.end(), [this](const auto& symbol){
                 return symbol.name == mName;
             });
-            it->values.push_back(std::make_pair(builder.getInsertPoint(), initValue));
+            vipir::Value* alloca = builder.CreateAlloca(mType->getVipirType());
+            it->values.push_back(std::make_pair(builder.getInsertPoint(), alloca));
+
+            if (mInitValue)
+            {
+                throw std::runtime_error("Unimplemented struct initialization");
+            }
+        }
+        else
+        {
+            if (mInitValue)
+            {
+                vipir::Value* initValue = mInitValue->codegen(builder, module, diag);
+                auto it = std::find_if(mScope->symbols.begin(), mScope->symbols.end(), [this](const auto& symbol){
+                    return symbol.name == mName;
+                });
+                it->values.push_back(std::make_pair(builder.getInsertPoint(), initValue));
+            }
         }
 
         return nullptr;

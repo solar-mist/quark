@@ -1,9 +1,0 @@
-func main(argc: i32) -> i8 {
-    let x: i32 = 2;
-    let y: i32 = x + 5;
-    if (x == argc)
-        argc = y;
-    else
-        argc = 12;
-    return argc;
-}

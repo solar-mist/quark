@@ -157,6 +157,7 @@ namespace parser
     {
         mLeft->typeCheck(diag, exit);
         mRight->typeCheck(diag, exit);
+        
 
         switch (mOperator) 
         {

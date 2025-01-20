@@ -1,5 +1,5 @@
 export import example.test3;
 
-export export export export export func y() -> i32 {
-	return 5;
+export export export export export func y(q: i32) -> i32 {
+	return q + 5;
 }
