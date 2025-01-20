@@ -18,6 +18,7 @@ namespace parser
         , mPosition(0)
         , mDiag(diag)
         , mActiveScope(globalScope)
+        , mExportBlock(false)
         , mImportManager(importManager)
     {
     }
@@ -27,7 +28,7 @@ namespace parser
         std::vector<ASTNodePtr> ast;
 
         mInsertNodeFn = [&ast](ASTNodePtr& node) {
-            ast.push_back(std::move(node));
+            if (node) ast.push_back(std::move(node));
         };
 
         while (mPosition < mTokens.size())
@@ -199,6 +200,18 @@ namespace parser
         {
             case lexer::TokenType::ExportKeyword:
                 consume();
+                if (current().getTokenType() == lexer::TokenType::LeftBrace)
+                {
+                    consume();
+                    mExportBlock = true;
+                    while (current().getTokenType() != lexer::TokenType::RightBrace)
+                    {
+                        auto node = parseGlobal(true);
+                        mInsertNodeFn(node);
+                    }
+                    consume();
+                    return nullptr;
+                }
                 return parseGlobal(true);
 
             case lexer::TokenType::ImportKeyword:

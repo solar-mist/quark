@@ -36,6 +36,7 @@ namespace parser
 
         Scope* mActiveScope;
 
+        bool mExportBlock;
         ImportManager& mImportManager;
 
         std::function<void(ASTNodePtr&)> mInsertNodeFn;
