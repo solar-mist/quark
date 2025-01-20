@@ -7,19 +7,18 @@
 #include "type/PointerType.h"
 #include "type/StructType.h"
 
-#include "symbol/ImportManager.h"
-
 #include <cinttypes>
 #include <filesystem>
 #include <format>
 
 namespace parser
 {
-    Parser::Parser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, Scope* globalScope)
+    Parser::Parser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, ImportManager& importManager, Scope* globalScope)
         : mTokens(tokens)
         , mPosition(0)
         , mDiag(diag)
         , mActiveScope(globalScope)
+        , mImportManager(importManager)
     {
     }
 
@@ -167,6 +166,12 @@ namespace parser
         if (current().getTokenType() == lexer::TokenType::Identifier)
         {
             if (auto structType = StructType::Get(std::string(current().getText())))
+            {
+                consume();
+                type = structType;
+            }
+            // In case of incomplete struct type from imported file
+            if (auto structType = Type::Get(std::string(current().getText())))
             {
                 consume();
                 type = structType;
@@ -412,7 +417,7 @@ namespace parser
             }
         }
         consume();
-
+        
         return std::make_unique<ClassDeclaration>(exported, std::move(name), std::move(fields), mActiveScope, std::move(token));
     }
 
@@ -436,8 +441,7 @@ namespace parser
 
         ScopePtr scope = std::make_unique<Scope>(nullptr, "", true);
 
-        ImportManager importManager;
-        auto nodes = importManager.resolveImports(path, scope.get());
+        auto nodes = mImportManager.resolveImports(path, scope.get());
         for (auto& node : nodes)
         {
             mInsertNodeFn(node);

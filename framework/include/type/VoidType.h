@@ -15,7 +15,8 @@ public:
     virtual CastLevel castTo(Type* destType) const override;
     virtual std::string getMangleId() const override;
 
-    bool isVoidType() const override;
+    bool isVoidType()   const override;
+    bool isObjectType() const override;
 };
 
 #endif // VIPER_FRAMEWORK_TYPE_VOID_TYPE_H

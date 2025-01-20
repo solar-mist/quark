@@ -20,6 +20,7 @@ public:
 
 private:
     std::vector<std::string> mSearchPaths;
+    std::vector<std::string> mImportedFiles;
 };
 
 #endif // VIPER_FRAMEWORK_SYMBOL_IMPORT_MANAGER_H

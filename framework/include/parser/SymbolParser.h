@@ -6,23 +6,14 @@
 #include "parser/ast/ASTNode.h"
 
 #include "parser/ast/global/Function.h"
-
-#include "parser/ast/statement/ReturnStatement.h"
-#include "parser/ast/statement/VariableDeclaration.h"
-#include "parser/ast/statement/IfStatement.h"
-
-#include "parser/ast/expression/BinaryExpression.h"
-#include "parser/ast/expression/IntegerLiteral.h"
-#include "parser/ast/expression/UnaryExpression.h"
-#include "parser/ast/expression/VariableExpression.h"
-#include "parser/ast/expression/CallExpression.h"
-#include "parser/ast/expression/StringLiteral.h"
+#include "parser/ast/global/ClassDeclaration.h"
 
 #include "lexer/Token.h"
 
 #include "diagnostic/Diagnostic.h"
 
 #include "symbol/Scope.h"
+#include "symbol/ImportManager.h"
 
 #include "type/Type.h"
 
@@ -33,7 +24,7 @@ namespace parser
     class SymbolParser
     {
     public:
-        SymbolParser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, Scope* globalScope);
+        SymbolParser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, ImportManager& importManager, Scope* globalScope);
 
         std::vector<ASTNodePtr> parse();
 
@@ -44,6 +35,8 @@ namespace parser
         diagnostic::Diagnostics& mDiag;
 
         Scope* mActiveScope;
+
+        ImportManager& mImportManager;
 
         std::function<void(ASTNodePtr&)> mInsertNodeFn;
 
@@ -58,6 +51,7 @@ namespace parser
         ASTNodePtr parseGlobal(bool exported = false);
 
         FunctionPtr parseFunction(bool pure, bool exported);
+        ClassDeclarationPtr parseClassDeclaration(bool exported);
         void parseImport(bool exported);
     };
 }

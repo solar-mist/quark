@@ -91,7 +91,7 @@ namespace lexer
         mSourceLocation.col += 1;
         if (mText[mPosition++] == '\n')
         {
-            mSourceLocation.col = 0;
+            mSourceLocation.col = 1;
             mSourceLocation.line += 1;
         }
         mSourceLocation.position += 1;

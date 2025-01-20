@@ -59,8 +59,9 @@ int main(int argc, char** argv)
     auto tokens = lexer.lex();
     lexer.scanInvalidTokens(tokens, diag);
 
+    ImportManager importManager;
     Scope globalScope(nullptr, "", true);
-    parser::Parser parser(tokens, diag, &globalScope);
+    parser::Parser parser(tokens, diag, importManager, &globalScope);
     auto ast = parser.parse();
 
     bool hadErrors = false;

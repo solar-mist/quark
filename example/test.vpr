@@ -1,11 +1,8 @@
 import example.test2;
 
-class Thing {
-    field: i32;
-}
-
 func main() -> i32 {
     let t: Thing;
+    t.field3.field2 = 1;
     let p: Thing* = &t;
     p->field = 12;
     return x(t.field);

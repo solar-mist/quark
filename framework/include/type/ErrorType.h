@@ -14,6 +14,8 @@ public:
     virtual vipir::Type* getVipirType() const override;
     virtual CastLevel castTo(Type* destType) const override;
     virtual std::string getMangleId() const override;
+    
+    bool isObjectType() const override;
 };
 
 #endif // VIPER_FRAMEWORK_TYPE_ERROR_TYPE_H

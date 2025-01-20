@@ -27,6 +27,8 @@ std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::p
         if (stream.is_open()) break;
     }
 
+    mImportedFiles.push_back(path.string());
+
     diagnostic::Diagnostics importerDiag;
 
     std::stringstream buf;
@@ -36,10 +38,10 @@ std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::p
     importerDiag.setText(text);
     importerDiag.setImported(true);
 
-    lexer::Lexer lexer(text, path.string());
+    lexer::Lexer lexer(text, mImportedFiles.back());
     auto tokens = lexer.lex();
 
-    parser::SymbolParser parser(tokens, importerDiag, scope);
+    parser::SymbolParser parser(tokens, importerDiag, *this, scope);
     
     return parser.parse();
 }

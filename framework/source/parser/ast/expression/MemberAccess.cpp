@@ -90,6 +90,15 @@ namespace parser
                 mType = Type::Get("error-type");
                 return;
             }
+            if (!static_cast<PointerType*>(mStruct->getType())->getPointeeType()->isStructType())
+            {
+                diag.reportCompilerError(mOperatorToken.getStartLocation(), mOperatorToken.getEndLocation(),
+                    std::format("{}'operator->'{} used on non-pointer-to-struct value '{}{}{}'",
+                        fmt::bold, fmt::defaults, fmt::bold, mStruct->getErrorToken().getText(), fmt::defaults));
+                exit = true;
+                mType = Type::Get("error-type");
+                return;
+            }
             mStructType = static_cast<StructType*>(static_cast<PointerType*>(mStruct->getType())->getPointeeType());
         }
         else
@@ -109,6 +118,13 @@ namespace parser
         auto structField = mStructType->getField(mId);
         if (structField)
             mType = structField->type;
+        else
+        {
+            diag.reportCompilerError(mErrorToken.getStartLocation(), mErrorToken.getEndLocation(), std::format("'{}class {}{}' has no member named '{}{}{}'",
+                fmt::bold, mStructType->getName(), fmt::defaults, fmt::bold, mId, fmt::defaults));
+            exit = true;
+            mType = Type::Get("error-type");
+        }
     }
 
     bool MemberAccess::triviallyImplicitCast(diagnostic::Diagnostics&, Type*)

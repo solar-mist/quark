@@ -2,20 +2,22 @@
 
 #include "parser/SymbolParser.h"
 
-#include "symbol/ImportManager.h"
 #include "type/PointerType.h"
+#include "type/StructType.h"
 
 #include <cinttypes>
 #include <filesystem>
 #include <format>
+#include <numeric>
 
 namespace parser
 {
-    SymbolParser::SymbolParser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, Scope* globalScope)
+    SymbolParser::SymbolParser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, ImportManager& importManager, Scope* globalScope)
         : mTokens(tokens)
         , mPosition(0)
         , mDiag(diag)
         , mActiveScope(globalScope)
+        , mImportManager(importManager)
     {
     }
 
@@ -107,8 +109,26 @@ namespace parser
             return type;
         }
 
-        expectToken(lexer::TokenType::TypeKeyword);
-        auto type = Type::Get(std::string(consume().getText()));
+        Type* type = nullptr;
+        if (current().getTokenType() == lexer::TokenType::Identifier)
+        {
+            if (auto structType = StructType::Get(std::string(current().getText())))
+            {
+                consume();
+                type = structType;
+            }
+            // In case of incomplete struct type from imported file
+            if (auto structType = Type::Get(std::string(current().getText())))
+            {
+                consume();
+                type = structType;
+            }
+        }
+        if (!type) // No struct type was found
+        {
+            expectToken(lexer::TokenType::TypeKeyword);
+            type = Type::Get(std::string(consume().getText()));
+        }
 
         while (current().getTokenType() == lexer::TokenType::Star)
         {
@@ -138,6 +158,9 @@ namespace parser
                 return parseFunction(true, exported);
             case lexer::TokenType::FuncKeyword:
                 return parseFunction(false, exported);
+
+            case lexer::TokenType::ClassKeyword:
+                return parseClassDeclaration(exported);
 
             case lexer::TokenType::EndOfFile:
                 consume();
@@ -209,6 +232,50 @@ namespace parser
         mActiveScope = scope->parent;
 
         return std::make_unique<Function>(exported, pure, std::move(name), functionType, std::move(arguments), std::move(body), std::move(scope), std::move(token));
+    }
+
+    ClassDeclarationPtr SymbolParser::parseClassDeclaration(bool exported)
+    {
+        auto token = consume(); // class
+
+        expectToken(lexer::TokenType::Identifier);
+        std::string name = std::string(consume().getText());
+
+        expectToken(lexer::TokenType::LeftBrace);
+        consume();
+
+        std::vector<ClassField> fields;
+        while (current().getTokenType() != lexer::TokenType::RightBrace)
+        {
+            expectToken(lexer::TokenType::Identifier);
+            std::string fieldName = std::string(consume().getText());
+
+            expectToken(lexer::TokenType::Colon);
+            consume();
+
+            Type* fieldType = parseType();
+            fields.push_back(ClassField(fieldType, std::move(fieldName)));
+
+            if (current().getTokenType() != lexer::TokenType::RightBrace)
+            {
+                expectToken(lexer::TokenType::Semicolon);
+                consume();
+            }
+        }
+        consume();
+
+        if (exported)
+            return std::make_unique<ClassDeclaration>(exported, std::move(name), std::move(fields), mActiveScope, std::move(token));
+        else
+        {
+            int totalSize = 0;
+            for (auto field : fields)
+            {
+                totalSize += field.type->getSize();
+            }
+            IncompleteStructType::Create(name, totalSize);
+            return nullptr;
+        }
     }
 
     void SymbolParser::parseImport(bool exported)

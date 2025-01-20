@@ -101,7 +101,8 @@ namespace ParserTests
 
         diagnostic::Diagnostics diag; // TODO: Add fake diagnostics to pass in
         ScopePtr scope = std::make_unique<Scope>(nullptr, "", true);
-        parser::Parser parser(tokens, diag, scope.get());
+        ImportManager importManager;
+        parser::Parser parser(tokens, diag, importManager, scope.get());
 
         auto f = std::bind(function, parser, otherArgs...);
         return {f(), diag, std::move(scope)};

@@ -45,4 +45,22 @@ private:
     std::vector<Field> mFields;
 };
 
+class IncompleteStructType : public Type
+{
+public:
+    IncompleteStructType(int size);
+
+    virtual int getSize() const override;
+    virtual vipir::Type* getVipirType() const override;
+    virtual CastLevel castTo(Type* destType) const override;
+    virtual std::string getMangleId() const override;
+    
+    bool isObjectType() const override;
+
+    static void Create(std::string name, int size);
+
+private:
+    int mSize;
+};
+
 #endif // VIPER_FRAMEWORK_TYPE_STRUCT_TYPE_H

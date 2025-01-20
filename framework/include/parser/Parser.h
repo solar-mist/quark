@@ -25,6 +25,7 @@
 #include "diagnostic/Diagnostic.h"
 
 #include "symbol/Scope.h"
+#include "symbol/ImportManager.h"
 
 #include "type/Type.h"
 
@@ -36,7 +37,7 @@ namespace parser
     {
     friend class ::ASTNodeIntrospector;
     public:
-        Parser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, Scope* globalScope);
+        Parser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, ImportManager& importManager, Scope* globalScope);
 
         std::vector<ASTNodePtr> parse();
 
@@ -47,6 +48,8 @@ namespace parser
         diagnostic::Diagnostics& mDiag;
 
         Scope* mActiveScope;
+
+        ImportManager& mImportManager;
 
         std::function<void(ASTNodePtr&)> mInsertNodeFn;
 

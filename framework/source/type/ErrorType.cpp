@@ -26,3 +26,8 @@ std::string ErrorType::getMangleId() const
 {
     return "Stray error-type in program";
 }
+
+bool ErrorType::isObjectType() const
+{
+    return false;
+}

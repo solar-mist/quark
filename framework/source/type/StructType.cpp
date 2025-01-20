@@ -133,3 +133,42 @@ void StructType::Erase(Type* type)
         return type.get() == structType;
     }), structTypes.end());
 }
+
+
+IncompleteStructType::IncompleteStructType(int size)
+    : Type("error-type")
+    , mSize(size)
+{
+}
+
+int IncompleteStructType::getSize() const
+{
+    return mSize;
+}
+
+vipir::Type* IncompleteStructType::getVipirType() const
+{
+    return vipir::Type::GetVoidType();
+}
+
+Type::CastLevel IncompleteStructType::castTo(Type* destType) const
+{
+    return CastLevel::Disallowed;
+}
+
+std::string IncompleteStructType::getMangleId() const
+{
+    return "Stray error-type in program";
+}
+
+bool IncompleteStructType::isObjectType() const
+{
+    return false;
+}
+
+void IncompleteStructType::Create(std::string name, int size)
+{
+    void AddType(std::string name, std::unique_ptr<Type> type);
+
+    AddType(name, std::make_unique<IncompleteStructType>(size));
+}

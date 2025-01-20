@@ -10,6 +10,11 @@
 
 std::unordered_map<std::string, std::unique_ptr<Type>> types;
 
+void AddType(std::string name, std::unique_ptr<Type> type)
+{
+    types[name] = std::move(type);
+}
+
 void Type::Init()
 {
     types["i8"]  = std::make_unique<IntegerType>(8, true);

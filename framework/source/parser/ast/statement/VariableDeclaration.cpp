@@ -63,6 +63,16 @@ namespace parser
     
     void VariableDeclaration::typeCheck(diagnostic::Diagnostics& diag, bool& exit)
     {
+        if (!mType->isObjectType())
+        {
+            diag.reportCompilerError(mErrorToken.getStartLocation(), mErrorToken.getEndLocation(), std::format("may not create object of type '{}{}{}'",
+                fmt::bold, mType->getName(), fmt::defaults
+            ));
+            exit = true;
+            mType = Type::Get("error-type");
+            return;
+        }
+
         if (mInitValue)
         {
             mInitValue->typeCheck(diag, exit);

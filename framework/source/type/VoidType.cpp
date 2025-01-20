@@ -31,3 +31,8 @@ bool VoidType::isVoidType() const
 {
     return true;
 }
+
+bool VoidType::isObjectType() const
+{
+    return false;
+}
