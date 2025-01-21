@@ -36,7 +36,9 @@ namespace parser
 
     vipir::Value* Function::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
     {
-        auto mangledName = mangle::MangleFunction(mName, static_cast<FunctionType*>(mType));
+        auto names = mScope->getNamespaces();
+        names.push_back(mName);
+        auto mangledName = mangle::MangleFunction(names, static_cast<FunctionType*>(mType));
 
         auto functionType = static_cast<vipir::FunctionType*>(mType->getVipirType());
         auto function = vipir::Function::Create(functionType, module, mangledName, mPure);

@@ -10,6 +10,7 @@
 namespace mangle
 {
     std::string MangleFunction(std::string_view name, FunctionType* type);
+    std::string MangleFunction(const std::vector<std::string>& names, FunctionType* type);
 }
 
 #endif // VIPER_FRAMEWORK_SYMBOL_MANGLE_H

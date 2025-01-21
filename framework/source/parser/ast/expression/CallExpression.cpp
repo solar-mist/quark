@@ -145,7 +145,7 @@ namespace parser
                 return mBestViableFunction;
             }
 
-            auto candidateFunctions = mScope->getCandidateFunctions(var->getName());
+            auto candidateFunctions = mScope->getCandidateFunctions(var->getNames());
             
             // Find all viable functions
             for (auto it = candidateFunctions.begin(); it != candidateFunctions.end();)

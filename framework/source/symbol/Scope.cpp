@@ -38,6 +38,13 @@ Scope::Scope(Scope* parent, std::string namespaceName, bool isGlobalScope, Type*
     , isGlobalScope(isGlobalScope)
     , currentReturnType(currentReturnType)
 {
+    if (parent && isGlobalScope) parent->children.push_back(this);
+}
+
+Scope* Scope::GetGlobalScope()
+{
+    static Scope globalScope(nullptr, "", true);
+    return &globalScope;
 }
 
 std::vector<std::string> Scope::getNamespaces()
@@ -49,6 +56,7 @@ std::vector<std::string> Scope::getNamespaces()
         namespaces.push_back(current->namespaceName);
         current = current->parent;
     }
+    std::reverse(namespaces.begin(), namespaces.end());
     return namespaces;
 }
 
@@ -64,7 +72,6 @@ Symbol* Scope::getSymbol(unsigned long id)
 
 Symbol* Scope::resolveSymbol(std::string name)
 {
-    // TODO: Namespace lookups
     Scope* current = this;
     while (current)
     {
@@ -73,49 +80,130 @@ Symbol* Scope::resolveSymbol(std::string name)
         });
 
         if (it != current->symbols.end()) return &*it;
-
-        for (auto& scope : current->importedScopes)
-        {
-            if (auto sym = scope->resolveSymbol(name))
-            {
-                if (sym->exported) return sym;
-            }
-        }
         current = current->parent;
+    }
+    
+    // Scan all scopes if we can't find the symbol by walking up
+    if (auto sym = GetGlobalScope()->resolveSymbolDown(name)) return sym;
+    return nullptr;
+}
+
+Symbol* Scope::resolveSymbol(std::vector<std::string> givenNames)
+{
+    std::vector<std::string> activeNames = getNamespaces();
+    do {
+        if (auto sym = GetGlobalScope()->resolveSymbolDown(givenNames)) return sym;
+
+        if (activeNames.empty()) break;
+        givenNames.insert(givenNames.begin(), std::move(activeNames.back()));
+        activeNames.erase(activeNames.end()-1);
+    }
+    while (!activeNames.empty());
+    return nullptr;
+}
+
+Symbol* Scope::resolveSymbolDown(std::string name)
+{
+    auto it = std::find_if(symbols.begin(), symbols.end(), [&name](const auto& symbol){
+        return symbol.name == name;
+    });
+    if (it != symbols.end()) return &*it;
+
+    for (auto child : children)
+    {
+        if (auto sym = child->resolveSymbolDown(name))
+        {
+            return sym;
+        }
     }
     return nullptr;
 }
 
-std::vector<Symbol*> Scope::getCandidateFunctions(std::string name)
+Symbol* Scope::resolveSymbolDown(std::vector<std::string> names)
 {
-    // TODO: Namespace lookups
-    std::vector<Symbol*> candidateFunctions;
-    Scope* current = this;
-    std::vector<Symbol*>::iterator prev;
-    while (current)
+    auto namespaces = getNamespaces();
+    if (std::equal(namespaces.begin(), namespaces.end(), names.begin(), names.end() - 1))
     {
-        auto it = std::find_if(current->symbols.begin(), current->symbols.end(), [&name](const auto& symbol){
+        // We are in the correct namespace
+        auto it = std::find_if(symbols.begin(), symbols.end(), [&names](const auto& symbol){
+            return symbol.name == names.back();
+        });
+        if (it != symbols.end()) return &*it;
+    }
+
+    for (auto child : children)
+    {
+        if (auto sym = child->resolveSymbolDown(names))
+        {
+            return sym;
+        }
+    }
+    return nullptr;
+}
+
+std::vector<Symbol*> Scope::getCandidateFunctions(std::vector<std::string> givenNames)
+{
+    std::vector<std::string> activeNames = getNamespaces();
+    std::vector<Symbol*> candidateFunctions;
+    do {
+        auto candidates = GetGlobalScope()->getCandidateFunctionsDown(givenNames);
+        std::copy(candidates.begin(), candidates.end(), std::back_inserter(candidateFunctions));
+
+        if (activeNames.empty()) break;
+        givenNames.insert(givenNames.begin(), std::move(activeNames.back()));
+        activeNames.erase(activeNames.end()-1);
+    }
+    while (!activeNames.empty());
+
+    return candidateFunctions;
+}
+
+std::vector<Symbol*> Scope::getCandidateFunctionsDown(std::string name)
+{
+    std::vector<Symbol*> candidateFunctions;
+    auto it = std::find_if(symbols.begin(), symbols.end(), [&name](const auto& symbol){
+        return symbol.name == name;
+    });
+
+    while (it != symbols.end())
+    {
+        candidateFunctions.push_back(&*it);
+        it = std::find_if(it+1, symbols.end(), [&name](const auto& symbol){
             return symbol.name == name;
         });
+    }
 
-        while (it != current->symbols.end())
+    for (auto child : children)
+    {
+        auto childCandidateFunctions = child->getCandidateFunctionsDown(name);
+        std::copy(childCandidateFunctions.begin(), childCandidateFunctions.end(), std::back_inserter(candidateFunctions));
+    }
+    return candidateFunctions;
+}
+
+std::vector<Symbol*> Scope::getCandidateFunctionsDown(std::vector<std::string> names)
+{
+    std::vector<Symbol*> candidateFunctions;
+    auto namespaces = getNamespaces();
+    if (std::equal(namespaces.begin(), namespaces.end(), names.begin(), names.end() - 1))
+    {
+        // We are in the correct namespace
+        auto it = std::find_if(symbols.begin(), symbols.end(), [&names](const auto& symbol){
+            return symbol.name == names.back();
+        });
+        while (it != symbols.end())
         {
             candidateFunctions.push_back(&*it);
-            it = std::find_if(it+1, current->symbols.end(), [&name](const auto& symbol){
-                return symbol.name == name;
+            it = std::find_if(it+1, symbols.end(), [&names](const auto& symbol){
+                return symbol.name == names.back();
             });
         }
+    }
 
-        for (auto& scope : current->importedScopes)
-        {
-            auto candidates = scope->getCandidateFunctions(name);
-            std::erase_if(candidates, [](Symbol* symbol) {
-                return !symbol->exported;
-            });
-
-            std::copy(candidates.begin(), candidates.end(), std::back_inserter(candidateFunctions));
-        }
-        current = current->parent;
+    for (auto child : children)
+    {
+        auto childCandidateFunctions = child->getCandidateFunctionsDown(names);
+        std::copy(childCandidateFunctions.begin(), childCandidateFunctions.end(), std::back_inserter(candidateFunctions));
     }
     return candidateFunctions;
 }

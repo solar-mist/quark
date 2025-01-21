@@ -45,6 +45,8 @@ namespace lexer
                 return "import";
             case TokenType::ClassKeyword:
                 return "class";
+            case TokenType::NamespaceKeyword:
+                return "namespace";
             case TokenType::Plus:
                 return "+";
             case TokenType::Minus:
@@ -79,6 +81,8 @@ namespace lexer
                 return ";";
             case TokenType::Colon:
                 return ":";
+            case TokenType::DoubleColon:
+                return "::";
             case TokenType::Comma:
                 return ",";
             case TokenType::Dot:

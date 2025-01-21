@@ -312,12 +312,12 @@ namespace parser
 
         ScopePtr scope = std::make_unique<Scope>(nullptr, "", true);
 
-        ImportManager importManager;
-        auto nodes = importManager.resolveImports(path, scope.get());
+        auto nodes = mImportManager.resolveImports(path, scope.get());
         for (auto& node : nodes)
         {
             mInsertNodeFn(node);
         }
-        mActiveScope->importedScopes.push_back(std::move(scope));
+        mActiveScope->children.push_back(scope.get());
+        mImportManager.seizeScope(std::move(scope));
     }
 }

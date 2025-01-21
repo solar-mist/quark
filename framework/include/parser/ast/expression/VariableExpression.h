@@ -15,6 +15,7 @@ namespace parser
     friend class ::ASTNodeIntrospector;
     public:
         VariableExpression(Scope* scope, std::string name, lexer::Token token);
+        VariableExpression(Scope* scope, std::vector<std::string> names, lexer::Token token); // TODO: Maybe just pass a full start and end sourcelocation pair here
 
         virtual vipir::Value* codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag) override;
 
@@ -24,9 +25,13 @@ namespace parser
         virtual bool triviallyImplicitCast(diagnostic::Diagnostics& diag, Type* destType) override;
 
         std::string getName();
+        std::vector<std::string> getNames();
+        bool isQualified();
 
     private:
-        std::string mName;
+        std::vector<std::string> mNames;
+
+        std::string reconstructNames();
     };
     using VariableExpressionPtr = std::unique_ptr<VariableExpression>;
 }

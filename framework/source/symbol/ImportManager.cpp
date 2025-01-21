@@ -45,3 +45,8 @@ std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::p
     
     return parser.parse();
 }
+
+void ImportManager::seizeScope(ScopePtr scope)
+{
+    mScopes.push_back(std::move(scope));
+}

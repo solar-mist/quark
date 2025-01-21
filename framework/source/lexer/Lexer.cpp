@@ -17,27 +17,28 @@ namespace lexer
     }
 
     static const std::unordered_map<std::string_view, TokenType> keywords = {
-        { "func",   TokenType::FuncKeyword },
-        { "return", TokenType::ReturnKeyword },
-        { "let",    TokenType::LetKeyword },
-        { "if",     TokenType::IfKeyword },
-        { "else",   TokenType::ElseKeyword },
-        { "true",   TokenType::TrueKeyword },
-        { "false",  TokenType::FalseKeyword },
-        { "pure",   TokenType::PureKeyword },
-        { "export", TokenType::ExportKeyword },
-        { "import", TokenType::ImportKeyword },
-        { "class",  TokenType::ClassKeyword },
-        { "i8",     TokenType::TypeKeyword },
-        { "i16",    TokenType::TypeKeyword },
-        { "i32",    TokenType::TypeKeyword },
-        { "i64",    TokenType::TypeKeyword },
-        { "u8",     TokenType::TypeKeyword },
-        { "u16",    TokenType::TypeKeyword },
-        { "u32",    TokenType::TypeKeyword },
-        { "u64",    TokenType::TypeKeyword },
-        { "void",   TokenType::TypeKeyword },
-        { "bool",   TokenType::TypeKeyword },
+        { "func",      TokenType::FuncKeyword },
+        { "return",    TokenType::ReturnKeyword },
+        { "let",       TokenType::LetKeyword },
+        { "if",        TokenType::IfKeyword },
+        { "else",      TokenType::ElseKeyword },
+        { "true",      TokenType::TrueKeyword },
+        { "false",     TokenType::FalseKeyword },
+        { "pure",      TokenType::PureKeyword },
+        { "export",    TokenType::ExportKeyword },
+        { "import",    TokenType::ImportKeyword },
+        { "class",     TokenType::ClassKeyword },
+        { "namespace", TokenType::NamespaceKeyword },
+        { "i8",        TokenType::TypeKeyword },
+        { "i16",       TokenType::TypeKeyword },
+        { "i32",       TokenType::TypeKeyword },
+        { "i64",       TokenType::TypeKeyword },
+        { "u8",        TokenType::TypeKeyword },
+        { "u16",       TokenType::TypeKeyword },
+        { "u32",       TokenType::TypeKeyword },
+        { "u64",       TokenType::TypeKeyword },
+        { "void",      TokenType::TypeKeyword },
+        { "bool",      TokenType::TypeKeyword },
     };
 
 
@@ -274,6 +275,11 @@ namespace lexer
             case ';':
                 return Token(";", TokenType::Semicolon, start, mSourceLocation);
             case ':':
+                if (peek(1) == ':')
+                {
+                    consume();
+                    return Token("::", TokenType::DoubleColon, start, mSourceLocation);
+                }
                 return Token(":", TokenType::Colon, start, mSourceLocation);
             case ',':
                 return Token(",", TokenType::Comma, start, mSourceLocation);

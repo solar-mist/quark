@@ -230,6 +230,9 @@ namespace parser
             case lexer::TokenType::ClassKeyword:
                 return parseClassDeclaration(exported);
 
+            case lexer::TokenType::NamespaceKeyword:
+                return parseNamespace(exported);
+
             case lexer::TokenType::EndOfFile:
                 consume();
                 return nullptr;
@@ -401,6 +404,30 @@ namespace parser
         return std::make_unique<Function>(exported, pure, std::move(name), functionType, std::move(arguments), std::move(body), std::move(scope), std::move(token));
     }
 
+    NamespacePtr Parser::parseNamespace(bool exported)
+    {
+        consume(); // namespace
+
+        auto token = consume();
+        std::string name = std::string(token.getText());
+
+        expectToken(lexer::TokenType::LeftBrace);
+        consume();
+
+        ScopePtr scope = std::make_unique<Scope>(mActiveScope, name, true);
+        mActiveScope = scope.get();
+        std::vector<ASTNodePtr> body;
+        while (current().getTokenType() != lexer::TokenType::RightBrace)
+        {
+            auto node = parseGlobal(exported || mExportBlock);
+            if (node) body.push_back(std::move(node));
+        }
+        consume();
+        mActiveScope = scope->parent;
+
+        return std::make_unique<Namespace>(exported, std::move(name), std::move(body), std::move(scope), std::move(token));
+    }
+
     ClassDeclarationPtr Parser::parseClassDeclaration(bool exported)
     {
         auto token = consume(); // class
@@ -459,7 +486,8 @@ namespace parser
         {
             mInsertNodeFn(node);
         }
-        mActiveScope->importedScopes.push_back(std::move(scope));
+        mActiveScope->children.push_back(scope.get());
+        mImportManager.seizeScope(std::move(scope));
     }
 
 
@@ -552,9 +580,21 @@ namespace parser
     VariableExpressionPtr Parser::parseVariableExpression()
     {
         auto token = consume();
-        std::string text = std::string(token.getText());
+        std::vector<std::string> names;
+        names.push_back(std::string(token.getText()));
 
-        return std::make_unique<VariableExpression>(mActiveScope, std::move(text), std::move(token));
+        while (current().getTokenType() == lexer::TokenType::DoubleColon)
+        {
+            consume();
+            expectToken(lexer::TokenType::Identifier);
+            token = consume();
+            names.push_back(std::string(token.getText()));
+        }
+
+        if (names.size() == 1)
+            return std::make_unique<VariableExpression>(mActiveScope, std::move(names[0]), std::move(token));
+
+        return std::make_unique<VariableExpression>(mActiveScope, std::move(names), std::move(token));
     }
 
     CallExpressionPtr Parser::parseCallExpression(ASTNodePtr callee)

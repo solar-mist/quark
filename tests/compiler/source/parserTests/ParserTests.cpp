@@ -43,7 +43,7 @@ struct ASTNodeIntrospector
 
     CREATE_PARSER_OBJECT_INTROSPECTOR_REF(BooleanLiteral, mValue);
 
-    CREATE_PARSER_OBJECT_INTROSPECTOR_REF(VariableExpression, mName);
+    CREATE_PARSER_OBJECT_INTROSPECTOR_REF(VariableExpression, mNames);
 
     CREATE_PARSER_OBJECT_INTROSPECTOR_REF(BinaryExpression, mLeft);
     CREATE_PARSER_OBJECT_INTROSPECTOR_REF(BinaryExpression, mRight);
@@ -341,8 +341,8 @@ namespace ParserTests
         auto variableExpression = dynamic_cast<parser::VariableExpression*>(result.ast.get());
         REQUIRE(variableExpression != nullptr);
 
-        auto name = testCase.introspector.GetVariableExpression_mName(variableExpression);
-        REQUIRE(name == "name");
+        auto names = testCase.introspector.GetVariableExpression_mNames(variableExpression);
+        REQUIRE(names[0] == "name");
     }
 
     TEST(BinaryOperators, ParserTests)

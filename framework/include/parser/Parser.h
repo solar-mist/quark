@@ -7,6 +7,7 @@
 
 #include "parser/ast/global/Function.h"
 #include "parser/ast/global/ClassDeclaration.h"
+#include "parser/ast/global/Namespace.h"
 
 #include "parser/ast/statement/ReturnStatement.h"
 #include "parser/ast/statement/VariableDeclaration.h"
@@ -73,6 +74,7 @@ namespace parser
 
         FunctionPtr parseFunction(bool pure, bool exported);
         ClassDeclarationPtr parseClassDeclaration(bool exported);
+        NamespacePtr parseNamespace(bool exported);
         void parseImport();
 
         ReturnStatementPtr parseReturnStatement();

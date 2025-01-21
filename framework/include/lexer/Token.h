@@ -24,6 +24,7 @@ namespace lexer
         ExportKeyword,
         ImportKeyword,
         ClassKeyword,
+        NamespaceKeyword,
 
         // Symbols
         Plus,
@@ -48,6 +49,7 @@ namespace lexer
 
         Semicolon,
         Colon,
+        DoubleColon,
         Comma,
         Dot,
 

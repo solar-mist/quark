@@ -17,4 +17,22 @@ namespace mangle
 
         return mangled;
     }
+
+    std::string MangleFunction(const std::vector<std::string>& names, FunctionType* type)
+    {
+        std::string mangled = "_F";
+        for (const auto& name : names)
+        {
+            if (name.empty()) continue;
+            
+            mangled += std::to_string(name.length());
+            mangled += name;
+        }
+        for (auto& argumentType : type->getArgumentTypes())
+        {
+            mangled += argumentType->getMangleId();
+        }
+
+        return mangled;
+    }
 }

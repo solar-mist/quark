@@ -1,12 +1,11 @@
 import example.test2;
 
-func main() -> i32 {
-    let x = 12;
-    let y = x;
+namespace test {
+    func abc() -> i32 {
+        return 1;
+    }
+}
 
-    let t: Thing;
-    t.field3.field2 = 1;
-    let p: Thing* = &t;
-    p->field = y;
-    return x(t.field);
+func main() -> i32 {
+    return test::abc();
 }

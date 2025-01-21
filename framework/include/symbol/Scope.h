@@ -33,11 +33,14 @@ struct Scope
 {
     Scope(Scope* parent, std::string namespaceName, bool isGlobalScope, Type* currentReturnType = nullptr);
 
+    static Scope* GetGlobalScope();
+
     std::vector<std::string> getNamespaces();
 
     Symbol* getSymbol(unsigned long id);
     Symbol* resolveSymbol(std::string name);
-    std::vector<Symbol*> getCandidateFunctions(std::string name);
+    Symbol* resolveSymbol(std::vector<std::string> givenNames);
+    std::vector<Symbol*> getCandidateFunctions(std::vector<std::string> givenNames);
 
     Scope* parent;
     
@@ -48,7 +51,14 @@ struct Scope
     Type* currentReturnType;
     std::vector<Symbol> symbols;
 
-    std::vector<std::unique_ptr<Scope> > importedScopes;
+    std::vector<Scope*> children;
+
+private:
+    // Scans all global scopes for a symbol/candidate functions
+    Symbol* resolveSymbolDown(std::string name);
+    Symbol* resolveSymbolDown(std::vector<std::string> names);
+    std::vector<Symbol*> getCandidateFunctionsDown(std::string name);
+    std::vector<Symbol*> getCandidateFunctionsDown(std::vector<std::string> names);
 };
 using ScopePtr = std::unique_ptr<Scope>;
 

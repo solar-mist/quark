@@ -18,9 +18,12 @@ public:
 
     std::vector<parser::ASTNodePtr> resolveImports(std::filesystem::path path, Scope* scope);
 
+    void seizeScope(ScopePtr scope);
+
 private:
     std::vector<std::string> mSearchPaths;
     std::vector<std::string> mImportedFiles;
+    std::vector<ScopePtr> mScopes;
 };
 
 #endif // VIPER_FRAMEWORK_SYMBOL_IMPORT_MANAGER_H
