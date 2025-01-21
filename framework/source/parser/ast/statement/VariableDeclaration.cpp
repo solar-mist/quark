@@ -63,6 +63,26 @@ namespace parser
     
     void VariableDeclaration::typeCheck(diagnostic::Diagnostics& diag, bool& exit)
     {
+        if (!mType)
+        {
+            if (!mInitValue)
+            {
+                diag.reportCompilerError(mErrorToken.getStartLocation(), mErrorToken.getEndLocation(), std::format("object '{}{}{}' has unknown type",
+                    fmt::bold, mErrorToken.getText(), fmt::defaults
+                ));
+                exit = true;
+                mType = Type::Get("error-type");
+                return;
+            }
+
+            mInitValue->typeCheck(diag, exit);
+            mType = mInitValue->getType();
+            auto it = std::find_if(mScope->symbols.begin(), mScope->symbols.end(), [this](const auto& symbol){
+                return symbol.name == mName;
+            });
+            it->type = mType; // This needs to be set again as it was set to null in the constructor
+        }
+
         if (!mType->isObjectType())
         {
             diag.reportCompilerError(mErrorToken.getStartLocation(), mErrorToken.getEndLocation(), std::format("may not create object of type '{}{}{}'",

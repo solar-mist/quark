@@ -1,9 +1,12 @@
 import example.test2;
 
 func main() -> i32 {
+    let x = 12;
+    let y = x;
+
     let t: Thing;
     t.field3.field2 = 1;
     let p: Thing* = &t;
-    p->field = 12;
+    p->field = y;
     return x(t.field);
 }

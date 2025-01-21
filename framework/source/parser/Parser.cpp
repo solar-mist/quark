@@ -482,6 +482,14 @@ namespace parser
         expectToken(lexer::TokenType::Identifier);
         auto token = consume();
         std::string name = std::string(token.getText());
+
+        // Implicitly typed
+        if (current().getTokenType() == lexer::TokenType::Equal)
+        {
+            consume();
+            ASTNodePtr initValue = parseExpression();
+            return std::make_unique<VariableDeclaration>(mActiveScope, std::move(name), nullptr, std::move(initValue), std::move(token));
+        }
         
         expectToken(lexer::TokenType::Colon);
         consume();
