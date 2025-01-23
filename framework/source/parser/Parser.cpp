@@ -458,7 +458,7 @@ namespace parser
         }
         consume();
         
-        return std::make_unique<ClassDeclaration>(exported, std::move(name), std::move(fields), mActiveScope, std::move(token));
+        return std::make_unique<ClassDeclaration>(exported, false, std::move(name), std::move(fields), mActiveScope, std::move(token));
     }
 
     void Parser::parseImport()
@@ -481,13 +481,53 @@ namespace parser
 
         ScopePtr scope = std::make_unique<Scope>(nullptr, "", true);
 
-        auto nodes = mImportManager.resolveImports(path, mTokens[0].getStartLocation().file, scope.get());
+        auto nodes = mImportManager.resolveImports(path, mTokens[0].getStartLocation().file, scope.get(), true);
         for (auto& node : nodes)
         {
             mInsertNodeFn(node);
         }
+
+        auto exports = mImportManager.getExports(path, scope.get());
+        std::vector<Export> invalid;
+        for (auto& exp : exports)
+        {
+            if (!exp.symbol || !mImportManager.wasExportedTo(std::string(mTokens[0].getStartLocation().file), exports, exp))
+            {
+                invalid.push_back(exp);
+            }
+        }
+        std::function<bool(Scope* scope, Symbol* sym)> erase;
+        erase = [&erase](Scope* scope, Symbol* sym){
+            auto it = std::find_if(scope->symbols.begin(), scope->symbols.end(), [sym](Symbol& symbol) {
+                return &symbol == sym;
+            });
+            if (it != scope->symbols.end())
+            {
+                scope->symbols.erase(it);
+                return true;
+            }
+            for (auto child : scope->children)
+            {
+                if (erase(child, sym)) return true;
+            }
+            return false;
+        };
+        for (auto& symbol : invalid)
+        {
+            erase(scope.get(), symbol.symbol);
+        }
+
+        for (auto& pendingStructType : mImportManager.getPendingStructTypeNames())
+        {
+            auto type = static_cast<PendingStructType*>(Type::Get(pendingStructType));
+            auto sym = scope->resolveSymbol(pendingStructType);
+            if (sym) type->initComplete();
+            else type->initIncomplete();
+        }
+
         mActiveScope->children.push_back(scope.get());
         mImportManager.seizeScope(std::move(scope));
+        mImportManager.clearExports();
     }
 
 

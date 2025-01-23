@@ -16,7 +16,44 @@ ImportManager::ImportManager()
 {
 }
 
-std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::path path, std::filesystem::path relativeTo, Scope* scope)
+std::vector<Export> ImportManager::getExports(std::string file, Scope* scope)
+{
+    return mExports;
+}
+
+std::vector<std::string> ImportManager::getPendingStructTypeNames()
+{
+    return mPendingStructTypeNames;
+}
+
+void ImportManager::clearExports()
+{
+    mExports.clear();
+    mPendingStructTypeNames.clear();
+}
+
+void ImportManager::addPendingStructType(std::string name)
+{
+    mPendingStructTypeNames.push_back(std::move(name));
+}
+
+bool ImportManager::wasExportedTo(std::string root, std::vector<Export>& exports, Export& exp)
+{
+    std::string from = exp.exportedFrom;
+    std::function<bool(std::string)> checkOne;
+    checkOne = [&](std::string path) {
+        if (path == root) return true;
+
+        auto it = std::find_if(exports.begin(), exports.end(), [&](auto& exp) {
+            return exp.exportedFrom == path && !exp.exportedTo.empty();
+        });
+        if (it != exports.end()) return checkOne(it->exportedTo);
+        return false;
+    };
+    return checkOne(exp.exportedFrom);
+}
+
+std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::path path, std::filesystem::path relativeTo, Scope* scope, bool exported)
 {
     path += ".vpr";
 
@@ -55,8 +92,30 @@ std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::p
     auto tokens = lexer.lex();
 
     parser::SymbolParser parser(tokens, importerDiag, *this, scope);
+    auto ast = parser.parse();
+
+    // Add an export if this was an export import
+    if (exported)
+        mExports.push_back({foundPath, nullptr, relativeTo.string()});
     
-    return parser.parse();
+    std::function<std::vector<Export>(Scope*)> collectScope;
+    collectScope = [&path, &collectScope, &foundPath](Scope* scope) {
+        std::vector<Export> ret;
+        for (auto& symbol : scope->symbols)
+        {
+            ret.push_back({foundPath, &symbol});
+        }
+        for (auto child : scope->children)
+        {
+            auto childExports = collectScope(child);
+            std::copy(childExports.begin(), childExports.end(), std::back_inserter(ret));
+        }
+        return ret;
+    };
+    auto exports = collectScope(scope);
+    std::copy(exports.begin(), exports.end(), std::back_inserter(mExports));
+    
+    return ast;
 }
 
 void ImportManager::seizeScope(ScopePtr scope)

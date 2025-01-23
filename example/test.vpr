@@ -2,10 +2,12 @@ import test.test2;
 
 namespace test {
     func abc() -> i32 {
-        return x(1);
+        return y(1);
     }
 }
 
 func main() -> i32 {
+    let x: Thing;
+    x.field = 1;
     return test::abc();
 }

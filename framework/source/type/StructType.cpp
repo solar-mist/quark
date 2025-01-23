@@ -172,3 +172,98 @@ void IncompleteStructType::Create(std::string name, int size)
 
     AddType(name, std::make_unique<IncompleteStructType>(size));
 }
+
+// helper type for the visitor #4
+template<class... Ts>
+struct overloaded : Ts... { using Ts::operator()...; };
+// explicit deduction guide (not needed as of C++20)
+template<class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
+
+PendingStructType::PendingStructType(std::string name, std::vector<StructType::Field> fields)
+    : Type(name)
+    , mFields(std::move(fields))
+{
+}
+
+int PendingStructType::getSize() const
+{
+    int ret;
+    for (auto& field : mFields)
+    {
+        ret += field.type->getSize();
+    }
+    return ret;
+}
+
+vipir::Type* PendingStructType::getVipirType() const
+{
+    vipir::Type* ret;
+    std::visit(overloaded{
+        [&ret](auto arg) { ret = arg.getVipirType(); },
+        [](std::monostate arg) {}
+    }, mImpl);
+    return ret;
+}
+
+Type::CastLevel PendingStructType::castTo(Type* type) const
+{
+    Type::CastLevel ret;
+    std::visit(overloaded{
+        [&ret, type](auto arg) { ret = arg.castTo(type); },
+        [](std::monostate arg) {}
+    }, mImpl);
+    return ret;
+}
+
+std::string PendingStructType::getMangleId() const
+{
+    std::string ret;
+    std::visit(overloaded{
+        [&ret](auto arg) { ret = arg.getMangleId(); },
+        [](std::monostate arg) {}
+    }, mImpl);
+    return ret;
+}
+
+bool PendingStructType::isStructType() const
+{
+    bool ret;
+    std::visit(overloaded{
+        [&ret](StructType arg) { ret = true; },
+        [&ret](auto arg) { ret = false; }
+    }, mImpl);
+    return ret;
+}
+
+bool PendingStructType::isObjectType() const
+{
+    bool ret;
+    std::visit(overloaded{
+        [&ret](StructType arg) { ret = true; },
+        [&ret](auto arg) { ret = false; }
+    }, mImpl);
+    return ret;
+}
+
+void PendingStructType::initComplete()
+{
+    mImpl = StructType(mName, mFields);
+}
+
+void PendingStructType::initIncomplete()
+{
+    mImpl = IncompleteStructType(getSize());
+}
+
+StructType* PendingStructType::get()
+{
+    return &std::get<1>(mImpl);
+}
+
+void PendingStructType::Create(std::string name, std::vector<StructType::Field> fields)
+{
+    void AddType(std::string name, std::unique_ptr<Type> type);
+
+    AddType(name, std::make_unique<PendingStructType>(name, std::move(fields)));
+}

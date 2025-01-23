@@ -90,7 +90,8 @@ namespace parser
                 mType = Type::Get("error-type");
                 return;
             }
-            if (!static_cast<PointerType*>(mStruct->getType())->getPointeeType()->isStructType())
+            auto pointeeType = static_cast<PointerType*>(mStruct->getType())->getPointeeType();
+            if (!pointeeType->isStructType())
             {
                 diag.reportCompilerError(mOperatorToken.getStartLocation(), mOperatorToken.getEndLocation(),
                     std::format("{}'operator->'{} used on non-pointer-to-struct value '{}{}{}'",
@@ -99,7 +100,10 @@ namespace parser
                 mType = Type::Get("error-type");
                 return;
             }
-            mStructType = static_cast<StructType*>(static_cast<PointerType*>(mStruct->getType())->getPointeeType());
+            if (auto pending = dynamic_cast<PendingStructType*>(pointeeType))
+                mStructType = pending->get();
+            else
+                mStructType = static_cast<StructType*>(pointeeType);
         }
         else
         {
@@ -112,7 +116,10 @@ namespace parser
                 mType = Type::Get("error-type");
                 return;
             }
-            mStructType = static_cast<StructType*>(mStruct->getType());
+            if (auto pending = dynamic_cast<PendingStructType*>(mStruct->getType()))
+                mStructType = pending->get();
+            else
+                mStructType = static_cast<StructType*>(mStruct->getType());
         }
 
         auto structField = mStructType->getField(mId);

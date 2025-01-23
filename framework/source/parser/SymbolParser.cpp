@@ -277,18 +277,9 @@ namespace parser
         }
         consume();
 
-        if (exported)
-            return std::make_unique<ClassDeclaration>(exported, std::move(name), std::move(fields), mActiveScope, std::move(token));
-        else
-        {
-            int totalSize = 0;
-            for (auto field : fields)
-            {
-                totalSize += field.type->getSize();
-            }
-            IncompleteStructType::Create(name, totalSize);
-            return nullptr;
-        }
+        auto classDeclaration = std::make_unique<ClassDeclaration>(exported, true, name, std::move(fields), mActiveScope, std::move(token));
+        mImportManager.addPendingStructType(std::move(name));
+        return classDeclaration;
     }
 
     void SymbolParser::parseImport(bool exported)
@@ -308,11 +299,10 @@ namespace parser
             }
         }
         consume();
-        if (!exported) return;
 
         ScopePtr scope = std::make_unique<Scope>(nullptr, "", true);
 
-        auto nodes = mImportManager.resolveImports(path, mTokens[0].getStartLocation().file, scope.get());
+        auto nodes = mImportManager.resolveImports(path, mTokens[0].getStartLocation().file, scope.get(), exported);
         for (auto& node : nodes)
         {
             mInsertNodeFn(node);

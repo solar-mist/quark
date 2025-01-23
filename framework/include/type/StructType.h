@@ -8,6 +8,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 class StructType : public Type
@@ -61,6 +62,31 @@ public:
 
 private:
     int mSize;
+};
+
+class PendingStructType : public Type
+{
+public:
+    PendingStructType(std::string name, std::vector<StructType::Field> fields);
+
+    virtual int getSize() const override;
+    virtual vipir::Type* getVipirType() const override;
+    virtual CastLevel castTo(Type* destType) const override;
+    virtual std::string getMangleId() const override;
+
+    bool isStructType() const override;
+    bool isObjectType() const override;
+
+    void initComplete();
+    void initIncomplete();
+    
+    StructType* get();
+
+    static void Create(std::string name, std::vector<StructType::Field> fields);
+
+private:
+    std::variant<std::monostate, StructType, IncompleteStructType> mImpl;
+    std::vector<StructType::Field> mFields;
 };
 
 #endif // VIPER_FRAMEWORK_TYPE_STRUCT_TYPE_H

@@ -1,5 +1,10 @@
-export {
 	import test3;
+export {
+
+	class Thing {
+		field: i32;
+		field3: Thing2;
+	}
 
 	func y(q: i32) -> i32 {
 		return q + 5;

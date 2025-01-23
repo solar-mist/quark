@@ -13,7 +13,7 @@ namespace parser
     }
     
     
-    ClassDeclaration::ClassDeclaration(bool exported, std::string name, std::vector<ClassField> fields, Scope* scope, lexer::Token token)
+    ClassDeclaration::ClassDeclaration(bool exported, bool pending, std::string name, std::vector<ClassField> fields, Scope* scope, lexer::Token token)
         : ASTNode(scope, nullptr, token)
         , mName(std::move(name))
         , mFields(std::move(fields))
@@ -26,7 +26,11 @@ namespace parser
         {
             structTypeFields.push_back(StructType::Field{false, field.name, field.type});
         }
-        StructType::Create(mName, std::move(structTypeFields));
+        
+        if (pending)
+            PendingStructType::Create(mName, std::move(structTypeFields));
+        else
+            StructType::Create(mName, std::move(structTypeFields));
     }
 
     vipir::Value* ClassDeclaration::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)

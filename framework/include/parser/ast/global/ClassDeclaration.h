@@ -22,7 +22,7 @@ namespace parser
     {
     friend struct ::ASTNodeIntrospector;
     public:
-        ClassDeclaration(bool exported, std::string name, std::vector<ClassField> fields, Scope* scope, lexer::Token token);
+        ClassDeclaration(bool exported, bool pending, std::string name, std::vector<ClassField> fields, Scope* scope, lexer::Token token);
 
         virtual vipir::Value* codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag) override;
 
