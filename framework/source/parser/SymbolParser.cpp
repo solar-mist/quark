@@ -312,7 +312,7 @@ namespace parser
 
         ScopePtr scope = std::make_unique<Scope>(nullptr, "", true);
 
-        auto nodes = mImportManager.resolveImports(path, scope.get());
+        auto nodes = mImportManager.resolveImports(path, mTokens[0].getStartLocation().file, scope.get());
         for (auto& node : nodes)
         {
             mInsertNodeFn(node);

@@ -16,18 +16,31 @@ ImportManager::ImportManager()
 {
 }
 
-std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::path path, Scope* scope)
+std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::path path, std::filesystem::path relativeTo, Scope* scope)
 {
     path += ".vpr";
 
     std::ifstream stream;
-    for (auto searchPath : mSearchPaths)
+    stream.open(relativeTo.parent_path() / path);
+    std::string foundPath;
+    if (!stream.is_open())
     {
-        stream.open(searchPath / path);
-        if (stream.is_open()) break;
+        for (auto& searchPath : mSearchPaths)
+        {
+            stream.open(searchPath / path);
+            if (stream.is_open())
+            {
+                foundPath = searchPath;
+                break;
+            }
+        }
+    }
+    else
+    {
+        foundPath = relativeTo.parent_path() / path;
     }
 
-    mImportedFiles.push_back(path.string());
+    mImportedFiles.push_back(foundPath);
 
     diagnostic::Diagnostics importerDiag;
 

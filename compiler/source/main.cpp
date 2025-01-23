@@ -35,6 +35,8 @@ int main(int argc, char** argv)
         std::cerr << "viper: could not find file '" << inputFilePath << "'\n";
         return 1;
     }
+    std::filesystem::path fullInputFilePath = std::filesystem::current_path() / inputFilePath;
+    std::string fullInputPathName = fullInputFilePath.string();
 
     std::stringstream ss;
     ss << inputFile.rdbuf();
@@ -55,7 +57,7 @@ int main(int argc, char** argv)
 
     Type::Init();
 
-    lexer::Lexer lexer(text, inputFilePath);
+    lexer::Lexer lexer(text, fullInputPathName);
     auto tokens = lexer.lex();
     lexer.scanInvalidTokens(tokens, diag);
 

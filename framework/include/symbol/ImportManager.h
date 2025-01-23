@@ -16,7 +16,7 @@ class ImportManager
 public:
     ImportManager();
 
-    std::vector<parser::ASTNodePtr> resolveImports(std::filesystem::path path, Scope* scope);
+    std::vector<parser::ASTNodePtr> resolveImports(std::filesystem::path path, std::filesystem::path relativeTo, Scope* scope);
 
     void seizeScope(ScopePtr scope);
 

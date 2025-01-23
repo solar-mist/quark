@@ -1,8 +1,8 @@
-import example.test2;
+import test.test2;
 
 namespace test {
     func abc() -> i32 {
-        return 1;
+        return x(1);
     }
 }
 
