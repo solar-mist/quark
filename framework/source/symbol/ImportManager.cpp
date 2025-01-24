@@ -39,26 +39,23 @@ void ImportManager::addPendingStructType(std::vector<std::string> names)
     mPendingStructTypeNames.push_back(std::move(names));
 }
 
-bool ImportManager::wasExportedTo(std::string root, std::vector<Export>& exports, Export& exp)
+bool ImportManager::wasExportedTo(std::string root, std::vector<Import>& imports, Export& exp)
 {
-    std::string from = exp.exportedFrom;
     std::function<bool(std::string)> checkOne;
     checkOne = [&](std::string path) {
         if (path == root) return true;
 
-        auto it = std::find_if(exports.begin(), exports.end(), [&](auto& exp) {
-            return exp.exportedFrom == path && !exp.exportedTo.empty();
+        auto it = std::find_if(imports.begin(), imports.end(), [&](auto& exp) {
+            return exp.from == path && !exp.to.empty();
         });
-        if (it != exports.end()) return checkOne(it->exportedTo);
+        if (it != imports.end()) return checkOne(it->to);
         return false;
     };
     return checkOne(exp.exportedFrom);
 }
 
-std::vector<Import> ImportManager::collectAllImports(std::filesystem::path path, std::filesystem::path relativeTo)
+void ImportManager::collectAllImports(std::filesystem::path path, std::filesystem::path relativeTo, std::vector<Import>& imports)
 {
-    std::vector<Import> imports;
-
     path += ".vpr";
 
     std::ifstream stream;
@@ -88,7 +85,7 @@ std::vector<Import> ImportManager::collectAllImports(std::filesystem::path path,
 
     imports.push_back({foundPath, relativeTo});
 
-    if (exists) return imports;
+    if (exists) return;
     
     diagnostic::Diagnostics importerDiag;
 
@@ -105,10 +102,9 @@ std::vector<Import> ImportManager::collectAllImports(std::filesystem::path path,
     parser::SymbolParser parser(tokens, importerDiag, *this, nullptr);
     for (auto& import : parser.findImports())
     {
-        auto importImports = collectAllImports(import, foundPath);
-        std::copy(importImports.begin(), importImports.end(), std::back_inserter(imports));
+        collectAllImports(import, foundPath, imports);
+        //std::copy(importImports.begin(), importImports.end(), std::back_inserter(imports));
     }
-    return imports;
 }
 
 std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::path path, std::filesystem::path relativeTo, Scope* scope, bool exported)

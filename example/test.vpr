@@ -1,19 +1,13 @@
 import test.test2;
-import test.test3;
 
 namespace test {
     func abc() -> i32 {
         return xyz::y(1);
-    }
-
-    class Test {
-        sdhgos: i32;
     }
 }
 
 func main() -> i32 {
     let x: xyz::Thing;
     x.field3.field2 = 1;
-    let y: test::Test;
     return test::abc();
 }

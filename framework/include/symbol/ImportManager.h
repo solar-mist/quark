@@ -28,9 +28,9 @@ public:
     std::vector<std::vector<std::string> > getPendingStructTypeNames();
     void clearExports();
     void addPendingStructType(std::vector<std::string> names);
-    bool wasExportedTo(std::string root, std::vector<Export>& exports, Export& exp);
+    bool wasExportedTo(std::string root, std::vector<Import>& imports, Export& exp);
 
-    std::vector<Import> collectAllImports(std::filesystem::path path, std::filesystem::path relativeTo);
+    void collectAllImports(std::filesystem::path path, std::filesystem::path relativeTo, std::vector<Import>& imports);
     std::vector<parser::ASTNodePtr> resolveImports(std::filesystem::path path, std::filesystem::path relativeTo, Scope* scope, bool exported);
 
     void reportUnknownTypeErrors();

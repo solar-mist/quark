@@ -484,9 +484,18 @@ namespace parser
         }
         consume();
 
-        auto allImports = mImportManager.collectAllImports(path, mTokens[0].getStartLocation().file);
-        for (auto import : allImports)
+        std::vector<Import> allImports;
+        mImportManager.collectAllImports(path, mTokens[0].getStartLocation().file, allImports);
+        for (auto it = allImports.begin(); it != allImports.end(); ++it)
         {
+            auto& import = *it;
+
+            // We only want to import each file once
+            auto lookIt = std::find_if(allImports.begin(), allImports.end(), [import](const auto& imp){
+                return imp.from == import.from;
+            });
+            if (lookIt != it) continue;
+
             ScopePtr scope = std::make_unique<Scope>(nullptr, "", true);
 
             auto nodes = mImportManager.resolveImports(import.from, import.to, scope.get(), true);
@@ -499,7 +508,7 @@ namespace parser
             std::vector<Export> invalid;
             for (auto& exp : exports)
             {
-                if (!exp.symbol || !mImportManager.wasExportedTo(std::string(mTokens[0].getStartLocation().file), exports, exp))
+                if (!exp.symbol || !mImportManager.wasExportedTo(std::string(mTokens[0].getStartLocation().file), allImports, exp))
                 {
                     invalid.push_back(exp);
                 }

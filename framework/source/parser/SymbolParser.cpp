@@ -26,8 +26,10 @@ namespace parser
     {
         std::vector<std::filesystem::path> ret;
 
-        while (current().getTokenType() == lexer::TokenType::ImportKeyword)
+        while (current().getTokenType() == lexer::TokenType::ImportKeyword ||
+              (current().getTokenType() == lexer::TokenType::ExportKeyword && peek(1).getTokenType() == lexer::TokenType::ImportKeyword))
         {
+            if (current().getTokenType() == lexer::TokenType::ExportKeyword) consume();
             consume();
             std::filesystem::path path;
             while (current().getTokenType() != lexer::TokenType::Semicolon)

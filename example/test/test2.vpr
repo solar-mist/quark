@@ -1,4 +1,5 @@
-import test3;
+export import test3;
+
 export namespace xyz {
 
 	class Thing {
