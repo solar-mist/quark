@@ -84,10 +84,11 @@ std::vector<Import> ImportManager::collectAllImports(std::filesystem::path path,
     auto it = std::find_if(imports.begin(), imports.end(), [&foundPath](auto& import){
         return import.from == foundPath;
     });
+    bool exists = it != imports.end();
 
     imports.push_back({foundPath, relativeTo});
 
-    if (it != imports.end()) return imports;
+    if (exists) return imports;
     
     diagnostic::Diagnostics importerDiag;
 
