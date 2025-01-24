@@ -25,9 +25,9 @@ public:
     ImportManager();
 
     std::vector<Export> getExports();
-    std::vector<std::string> getPendingStructTypeNames();
+    std::vector<std::vector<std::string> > getPendingStructTypeNames();
     void clearExports();
-    void addPendingStructType(std::string name);
+    void addPendingStructType(std::vector<std::string> names);
     bool wasExportedTo(std::string root, std::vector<Export>& exports, Export& exp);
 
     std::vector<Import> collectAllImports(std::filesystem::path path, std::filesystem::path relativeTo);
@@ -43,7 +43,7 @@ private:
     std::vector<ScopePtr> mScopes;
 
     std::vector<Export> mExports;
-    std::vector<std::string> mPendingStructTypeNames;
+    std::vector<std::vector<std::string> > mPendingStructTypeNames;
 };
 
 struct Export

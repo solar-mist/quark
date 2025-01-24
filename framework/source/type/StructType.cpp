@@ -134,6 +134,21 @@ void StructType::Erase(Type* type)
     }), structTypes.end());
 }
 
+std::string StructType::MangleName(std::vector<std::string>& names)
+{
+    int trueCount = 0;
+    std::string ret;
+    for (auto& name : names)
+    {
+        if (name.empty()) continue; // Ignore empty namespace names
+        ++trueCount;
+        ret += std::to_string(name.length());
+        ret += name;
+    }
+    if (trueCount == 1) return names.back();
+    return ret;
+}
+
 
 IncompleteStructType::IncompleteStructType(int size)
     : Type("error-type")

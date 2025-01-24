@@ -139,21 +139,27 @@ namespace parser
         Type* type = nullptr;
         if (current().getTokenType() == lexer::TokenType::Identifier)
         {
-            if (auto structType = StructType::Get(std::string(current().getText())))
+            auto var = parseVariableExpression();
+            auto names = var->getNames();
+            auto mangled = StructType::MangleName(names);
+            
+            if (auto structType = StructType::Get(mangled))
             {
-                consume();
                 type = structType;
             }
             // In case of incomplete struct type from imported file
-            if (auto structType = Type::Get(std::string(current().getText())))
+            if (auto structType = Type::Get(mangled))
             {
-                consume();
                 type = structType;
             }
-            // Create an empty pending struct type for now which will be resolved later
-            auto token = consume();
-            auto text = std::string(token.getText());
-            type = PendingStructType::Create(std::move(token), std::move(text), {});
+
+            if (!type)
+            {
+                // Create an empty pending struct type for now which will be resolved later
+                auto token = peek(-1);
+                auto mangled = StructType::MangleName(names);
+                type = PendingStructType::Create(std::move(token), std::move(mangled), {});
+            }
         }
         if (!type) // No struct type was found
         {
@@ -204,6 +210,9 @@ namespace parser
 
             case lexer::TokenType::ClassKeyword:
                 return parseClassDeclaration(exported);
+
+            case lexer::TokenType::NamespaceKeyword:
+                return parseNamespace(exported);
 
             case lexer::TokenType::EndOfFile:
                 consume();
@@ -308,7 +317,9 @@ namespace parser
         consume();
 
         auto classDeclaration = std::make_unique<ClassDeclaration>(exported, true, name, std::move(fields), mActiveScope, std::move(token));
-        mImportManager.addPendingStructType(std::move(name));
+        std::vector<std::string> names = mActiveScope->getNamespaces();
+        names.push_back(name);
+        mImportManager.addPendingStructType(std::move(names));
         return classDeclaration;
     }
 
@@ -340,5 +351,49 @@ namespace parser
         }
         mActiveScope->children.push_back(scope.get());
         mImportManager.seizeScope(std::move(scope));
+    }
+
+    NamespacePtr SymbolParser::parseNamespace(bool exported)
+    {
+        consume(); // namespace
+
+        auto token = consume();
+        std::string name = std::string(token.getText());
+
+        expectToken(lexer::TokenType::LeftBrace);
+        consume();
+
+        ScopePtr scope = std::make_unique<Scope>(mActiveScope, name, true);
+        mActiveScope = scope.get();
+        std::vector<ASTNodePtr> body;
+        while (current().getTokenType() != lexer::TokenType::RightBrace)
+        {
+            auto node = parseGlobal(exported || mExportBlock);
+            if (node) body.push_back(std::move(node));
+        }
+        consume();
+        mActiveScope = scope->parent;
+
+        return std::make_unique<Namespace>(exported, std::move(name), std::move(body), std::move(scope), std::move(token));
+    }
+
+    VariableExpressionPtr SymbolParser::parseVariableExpression()
+    {
+        auto token = consume();
+        std::vector<std::string> names;
+        names.push_back(std::string(token.getText()));
+
+        while (current().getTokenType() == lexer::TokenType::DoubleColon)
+        {
+            consume();
+            expectToken(lexer::TokenType::Identifier);
+            token = consume();
+            names.push_back(std::string(token.getText()));
+        }
+
+        if (names.size() == 1)
+            return std::make_unique<VariableExpression>(mActiveScope, std::move(names[0]), std::move(token));
+
+        return std::make_unique<VariableExpression>(mActiveScope, std::move(names), std::move(token));
     }
 }

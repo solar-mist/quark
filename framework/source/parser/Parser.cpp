@@ -165,22 +165,26 @@ namespace parser
         }
 
         Type* type = nullptr;
+        int save = mPosition;
         if (current().getTokenType() == lexer::TokenType::Identifier)
         {
-            if (auto structType = StructType::Get(std::string(current().getText())))
+            auto var = parseVariableExpression();
+            auto names = var->getNames();
+            auto mangled = StructType::MangleName(names);
+            
+            if (auto structType = StructType::Get(mangled))
             {
-                consume();
                 type = structType;
             }
             // In case of incomplete struct type from imported file
-            if (auto structType = Type::Get(std::string(current().getText())))
+            if (auto structType = Type::Get(mangled))
             {
-                consume();
                 type = structType;
             }
         }
         if (!type) // No struct type was found
         {
+            mPosition = save;
             expectToken(lexer::TokenType::TypeKeyword);
             type = Type::Get(std::string(consume().getText()));
         }
@@ -521,15 +525,15 @@ namespace parser
                 erase(scope.get(), symbol.symbol);
             }
 
+            mActiveScope->children.push_back(scope.get());
             for (auto& pendingStructType : mImportManager.getPendingStructTypeNames())
             {
-                auto type = static_cast<PendingStructType*>(Type::Get(pendingStructType));
+                auto type = static_cast<PendingStructType*>(Type::Get(StructType::MangleName(pendingStructType)));
                 auto sym = scope->resolveSymbol(pendingStructType);
                 if (sym) type->initComplete();
                 else type->initIncomplete();
             }
 
-            mActiveScope->children.push_back(scope.get());
             mImportManager.seizeScope(std::move(scope));
             mImportManager.clearExports();
         }

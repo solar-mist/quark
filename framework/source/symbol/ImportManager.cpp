@@ -23,7 +23,7 @@ std::vector<Export> ImportManager::getExports()
     return mExports;
 }
 
-std::vector<std::string> ImportManager::getPendingStructTypeNames()
+std::vector<std::vector<std::string> > ImportManager::getPendingStructTypeNames()
 {
     return mPendingStructTypeNames;
 }
@@ -34,9 +34,9 @@ void ImportManager::clearExports()
     mPendingStructTypeNames.clear();
 }
 
-void ImportManager::addPendingStructType(std::string name)
+void ImportManager::addPendingStructType(std::vector<std::string> names)
 {
-    mPendingStructTypeNames.push_back(std::move(name));
+    mPendingStructTypeNames.push_back(std::move(names));
 }
 
 bool ImportManager::wasExportedTo(std::string root, std::vector<Export>& exports, Export& exp)

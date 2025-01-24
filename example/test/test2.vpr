@@ -1,5 +1,5 @@
 import test3;
-export {
+export namespace xyz {
 
 	class Thing {
 		field: i32;

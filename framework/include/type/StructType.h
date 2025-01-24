@@ -43,6 +43,8 @@ public:
     static StructType* Create(std::string name, std::vector<Field> fields);
     static void Erase(Type* type);
 
+    static std::string MangleName(std::vector<std::string>& names);
+
 private:
     std::string mName;
     std::vector<Field> mFields;

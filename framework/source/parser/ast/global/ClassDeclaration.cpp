@@ -26,10 +26,14 @@ namespace parser
         {
             structTypeFields.push_back(StructType::Field{false, field.name, field.type});
         }
+
+        auto namespaces = mScope->getNamespaces();
+        namespaces.push_back(mName);
+        auto mangled = StructType::MangleName(namespaces);
         
         if (pending)
         {
-            if (auto type = Type::Get(mName))
+            if (auto type = Type::Get(mangled))
             {
                 auto pendingType = dynamic_cast<PendingStructType*>(type);
                 // TODO: Make sure pendingType exists
@@ -38,11 +42,11 @@ namespace parser
             }
             else
             {
-                PendingStructType::Create(mErrorToken, mName, std::move(structTypeFields));
+                PendingStructType::Create(mErrorToken, mangled, std::move(structTypeFields));
             }
         }
         else
-            StructType::Create(mName, std::move(structTypeFields));
+            StructType::Create(mangled, std::move(structTypeFields));
     }
 
     vipir::Value* ClassDeclaration::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)

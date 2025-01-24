@@ -7,6 +7,9 @@
 
 #include "parser/ast/global/Function.h"
 #include "parser/ast/global/ClassDeclaration.h"
+#include "parser/ast/global/Namespace.h"
+
+#include "parser/ast/expression/VariableExpression.h"
 
 #include "lexer/Token.h"
 
@@ -56,6 +59,9 @@ namespace parser
         FunctionPtr parseFunction(bool pure, bool exported);
         ClassDeclarationPtr parseClassDeclaration(bool exported);
         void parseImport(bool exported);
+        NamespacePtr parseNamespace(bool exported);
+
+        VariableExpressionPtr parseVariableExpression();
     };
 }
 
