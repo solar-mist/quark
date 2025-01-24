@@ -13,18 +13,27 @@
 
 struct Export;
 
+struct Import
+{
+    std::filesystem::path from;
+    std::filesystem::path to;
+};
+
 class ImportManager
 {
 public:
     ImportManager();
 
-    std::vector<Export> getExports(std::string file, Scope* scope);
+    std::vector<Export> getExports();
     std::vector<std::string> getPendingStructTypeNames();
     void clearExports();
     void addPendingStructType(std::string name);
     bool wasExportedTo(std::string root, std::vector<Export>& exports, Export& exp);
 
+    std::vector<Import> collectAllImports(std::filesystem::path path, std::filesystem::path relativeTo);
     std::vector<parser::ASTNodePtr> resolveImports(std::filesystem::path path, std::filesystem::path relativeTo, Scope* scope, bool exported);
+
+    void reportUnknownTypeErrors();
 
     void seizeScope(ScopePtr scope);
 

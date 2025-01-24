@@ -1,4 +1,5 @@
 import test.test2;
+import test.test3;
 
 namespace test {
     func abc() -> i32 {
@@ -8,6 +9,6 @@ namespace test {
 
 func main() -> i32 {
     let x: Thing;
-    x.field = 1;
+    x.field3.field2 = 1;
     return test::abc();
 }

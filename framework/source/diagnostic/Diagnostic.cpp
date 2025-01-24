@@ -62,11 +62,13 @@ namespace diagnostic
         int lineEnd = getLinePosition(end.line)-1;
 
         end.position += 1;
-        std::string_view before = mText.substr(lineStart, start.position - lineStart);
+        std::string before = std::string(mText.substr(lineStart, start.position - lineStart));
         std::string_view error = mText.substr(start.position, end.position - start.position);
         std::string_view after = mText.substr(end.position, lineEnd - end.position);
         std::string spacesBefore = std::string(std::to_string(start.line).length(), ' ');
         std::string spacesAfter = std::string(before.length(), ' ');
+
+        std::for_each(before.begin(), before.end(), [](char& c){if(c == '\t')c=' ';});
 
         std::cerr << std::format("{}{}:{}:{} {}error: {}{}\n", fmt::bold, start.file, start.line, start.col, fmt::red, fmt::defaults, message);
         std::cerr << std::format("    {} | {}{}{}{}{}{}\n", start.line, before, fmt::bold, fmt::red, error, fmt::defaults, after);

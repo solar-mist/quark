@@ -5,6 +5,8 @@
 
 #include "type/Type.h"
 
+#include "lexer/Token.h"
+
 #include <map>
 #include <string>
 #include <utility>
@@ -67,7 +69,7 @@ private:
 class PendingStructType : public Type
 {
 public:
-    PendingStructType(std::string name, std::vector<StructType::Field> fields);
+    PendingStructType(lexer::Token token, std::string name, std::vector<StructType::Field> fields);
 
     virtual int getSize() const override;
     virtual vipir::Type* getVipirType() const override;
@@ -79,12 +81,16 @@ public:
 
     void initComplete();
     void initIncomplete();
+    void setFields(std::vector<StructType::Field> fields);
     
     StructType* get();
+    lexer::Token& getToken();
 
-    static void Create(std::string name, std::vector<StructType::Field> fields);
+    static PendingStructType* Create(lexer::Token token, std::string name, std::vector<StructType::Field> fields);
+    static std::vector<PendingStructType*> GetPending();
 
 private:
+    lexer::Token mToken;
     std::variant<std::monostate, StructType, IncompleteStructType> mImpl;
     std::vector<StructType::Field> mFields;
 };

@@ -28,7 +28,19 @@ namespace parser
         }
         
         if (pending)
-            PendingStructType::Create(mName, std::move(structTypeFields));
+        {
+            if (auto type = Type::Get(mName))
+            {
+                auto pendingType = dynamic_cast<PendingStructType*>(type);
+                // TODO: Make sure pendingType exists
+
+                pendingType->setFields(std::move(structTypeFields));
+            }
+            else
+            {
+                PendingStructType::Create(mErrorToken, mName, std::move(structTypeFields));
+            }
+        }
         else
             StructType::Create(mName, std::move(structTypeFields));
     }

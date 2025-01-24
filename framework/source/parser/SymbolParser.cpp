@@ -22,6 +22,32 @@ namespace parser
     {
     }
 
+    std::vector<std::filesystem::path> SymbolParser::findImports()
+    {
+        std::vector<std::filesystem::path> ret;
+
+        while (current().getTokenType() == lexer::TokenType::ImportKeyword)
+        {
+            consume();
+            std::filesystem::path path;
+            while (current().getTokenType() != lexer::TokenType::Semicolon)
+            {
+                expectToken(lexer::TokenType::Identifier);
+                path /= consume().getText();
+
+                if (current().getTokenType() != lexer::TokenType::Semicolon)
+                {
+                    expectToken(lexer::TokenType::Dot);
+                    consume();
+                }
+            }
+            consume();
+            ret.push_back(std::move(path));
+        }
+
+        return ret;
+    }
+
     std::vector<ASTNodePtr> SymbolParser::parse()
     {
         std::vector<ASTNodePtr> ast;
@@ -124,6 +150,10 @@ namespace parser
                 consume();
                 type = structType;
             }
+            // Create an empty pending struct type for now which will be resolved later
+            auto token = consume();
+            auto text = std::string(token.getText());
+            type = PendingStructType::Create(std::move(token), std::move(text), {});
         }
         if (!type) // No struct type was found
         {
@@ -299,6 +329,7 @@ namespace parser
             }
         }
         consume();
+        return;
 
         ScopePtr scope = std::make_unique<Scope>(nullptr, "", true);
 

@@ -9,6 +9,8 @@
 
 #include "parser/SymbolParser.h"
 
+#include "type/StructType.h"
+
 #include <fstream>
 
 ImportManager::ImportManager()
@@ -16,7 +18,7 @@ ImportManager::ImportManager()
 {
 }
 
-std::vector<Export> ImportManager::getExports(std::string file, Scope* scope)
+std::vector<Export> ImportManager::getExports()
 {
     return mExports;
 }
@@ -53,8 +55,10 @@ bool ImportManager::wasExportedTo(std::string root, std::vector<Export>& exports
     return checkOne(exp.exportedFrom);
 }
 
-std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::path path, std::filesystem::path relativeTo, Scope* scope, bool exported)
+std::vector<Import> ImportManager::collectAllImports(std::filesystem::path path, std::filesystem::path relativeTo)
 {
+    std::vector<Import> imports;
+
     path += ".vpr";
 
     std::ifstream stream;
@@ -77,6 +81,42 @@ std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::p
         foundPath = relativeTo.parent_path() / path;
     }
 
+    auto it = std::find_if(imports.begin(), imports.end(), [&foundPath](auto& import){
+        return import.from == foundPath;
+    });
+
+    imports.push_back({foundPath, relativeTo});
+
+    if (it != imports.end()) return imports;
+    
+    diagnostic::Diagnostics importerDiag;
+
+    std::stringstream buf;
+    buf << stream.rdbuf();
+    std::string text = buf.str();
+
+    importerDiag.setText(text);
+    importerDiag.setImported(true);
+
+    lexer::Lexer lexer(text, foundPath);
+    auto tokens = lexer.lex();
+
+    parser::SymbolParser parser(tokens, importerDiag, *this, nullptr);
+    for (auto& import : parser.findImports())
+    {
+        auto importImports = collectAllImports(import, foundPath);
+        std::copy(importImports.begin(), importImports.end(), std::back_inserter(imports));
+    }
+    return imports;
+}
+
+std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::path path, std::filesystem::path relativeTo, Scope* scope, bool exported)
+{
+    std::string foundPath = path.string();
+
+    std::ifstream stream;
+    stream.open(path);
+
     mImportedFiles.push_back(foundPath);
 
     diagnostic::Diagnostics importerDiag;
@@ -96,7 +136,7 @@ std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::p
 
     // Add an export if this was an export import
     if (exported)
-        mExports.push_back({foundPath, nullptr, relativeTo.string()});
+        mExports.push_back({path, nullptr, relativeTo.string()});
     
     std::function<std::vector<Export>(Scope*)> collectScope;
     collectScope = [&path, &collectScope, &foundPath](Scope* scope) {
@@ -116,6 +156,31 @@ std::vector<parser::ASTNodePtr> ImportManager::resolveImports(std::filesystem::p
     std::copy(exports.begin(), exports.end(), std::back_inserter(mExports));
     
     return ast;
+}
+
+void ImportManager::reportUnknownTypeErrors()
+{
+    auto pendings = PendingStructType::GetPending();
+
+    for (auto pending : pendings)
+    {
+        std::filesystem::path file = pending->getToken().getStartLocation().file;
+        std::ifstream stream;
+
+        stream.open(file); // TODO: Store files and then clear them after this function?
+        std::stringstream buf;
+        buf << stream.rdbuf();
+        std::string text = buf.str();
+
+        diagnostic::Diagnostics diag;
+        diag.setText(text);
+        diag.setImported(true);
+
+        diag.reportCompilerError(pending->getToken().getStartLocation(), pending->getToken().getEndLocation(), std::format("unknown type name '{}{}{}'",
+            fmt::bold, pending->getName(), fmt::defaults
+        ));
+    }
+    if (pendings.size()) std::exit(1);
 }
 
 void ImportManager::seizeScope(ScopePtr scope)

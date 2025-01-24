@@ -1,4 +1,4 @@
-	import test3;
+import test3;
 export {
 
 	class Thing {

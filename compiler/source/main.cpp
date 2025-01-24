@@ -65,6 +65,8 @@ int main(int argc, char** argv)
     parser::Parser parser(tokens, diag, importManager, Scope::GetGlobalScope());
     auto ast = parser.parse();
 
+    importManager.reportUnknownTypeErrors();
+
     bool hadErrors = false;
     for (auto& node : ast)
     {

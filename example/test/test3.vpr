@@ -1,3 +1,5 @@
+export import test2;
+
 export {
 	class Thing2 {
 		field2: i32;

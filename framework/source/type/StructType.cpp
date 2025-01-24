@@ -180,8 +180,11 @@ struct overloaded : Ts... { using Ts::operator()...; };
 template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
-PendingStructType::PendingStructType(std::string name, std::vector<StructType::Field> fields)
+static std::vector<PendingStructType*> pendings;
+
+PendingStructType::PendingStructType(lexer::Token token, std::string name, std::vector<StructType::Field> fields)
     : Type(name)
+    , mToken(std::move(token))
     , mFields(std::move(fields))
 {
 }
@@ -249,11 +252,20 @@ bool PendingStructType::isObjectType() const
 void PendingStructType::initComplete()
 {
     mImpl = StructType(mName, mFields);
+    std::erase(pendings, this);
 }
 
 void PendingStructType::initIncomplete()
 {
     mImpl = IncompleteStructType(getSize());
+    std::erase(pendings, this);
+}
+
+void PendingStructType::setFields(std::vector<StructType::Field> fields)
+{
+    mImpl = std::monostate();
+    mFields = fields;
+    pendings.push_back(this);
 }
 
 StructType* PendingStructType::get()
@@ -261,9 +273,25 @@ StructType* PendingStructType::get()
     return &std::get<1>(mImpl);
 }
 
-void PendingStructType::Create(std::string name, std::vector<StructType::Field> fields)
+lexer::Token& PendingStructType::getToken()
+{
+    return mToken;
+}
+
+PendingStructType* PendingStructType::Create(lexer::Token token, std::string name, std::vector<StructType::Field> fields)
 {
     void AddType(std::string name, std::unique_ptr<Type> type);
+    auto typePtr = std::make_unique<PendingStructType>(std::move(token), name, std::move(fields));
 
-    AddType(name, std::make_unique<PendingStructType>(name, std::move(fields)));
+    auto type = typePtr.get();
+    pendings.push_back(type);
+
+    AddType(name, std::move(typePtr));
+
+    return type;
+}
+
+std::vector<PendingStructType*> PendingStructType::GetPending()
+{
+    return pendings;
 }

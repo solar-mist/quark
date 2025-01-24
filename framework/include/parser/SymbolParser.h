@@ -26,6 +26,8 @@ namespace parser
     public:
         SymbolParser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, ImportManager& importManager, Scope* globalScope);
 
+        std::vector<std::filesystem::path> findImports();
+
         std::vector<ASTNodePtr> parse();
 
     private:
