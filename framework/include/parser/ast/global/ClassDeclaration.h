@@ -4,6 +4,7 @@
 #define VIPER_FRAMEWORK_PARSER_AST_GLOBAL_CLASS_DECLARATION_H 1
 
 #include "parser/ast/ASTNode.h"
+#include "parser/ast/global/Function.h"
 
 #include <memory>
 #include <string>
@@ -18,11 +19,24 @@ namespace parser
         std::string name;
     };
 
+    struct ClassMethod
+    {
+        bool pure;
+        std::string name;
+        FunctionType* type;
+        std::vector<FunctionArgument> arguments;
+        std::vector<ASTNodePtr> body;
+        ScopePtr ownScope;
+        lexer::Token errorToken;
+
+        int symbolId;
+    };
+
     class ClassDeclaration : public ASTNode
     {
     friend struct ::ASTNodeIntrospector;
     public:
-        ClassDeclaration(bool exported, bool pending, std::string name, std::vector<ClassField> fields, Scope* scope, lexer::Token token);
+        ClassDeclaration(bool exported, bool pending, std::string name, std::vector<ClassField> fields, std::vector<ClassMethod> methods, ScopePtr ownScope, lexer::Token token);
 
         virtual vipir::Value* codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag) override;
 
@@ -34,6 +48,8 @@ namespace parser
     private:
         std::string mName;
         std::vector<ClassField> mFields;
+        std::vector<ClassMethod> mMethods;
+        ScopePtr mOwnScope;
         unsigned long mSymbolId;
     };
     using ClassDeclarationPtr = std::unique_ptr<ClassDeclaration>;

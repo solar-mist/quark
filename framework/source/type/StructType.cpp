@@ -9,18 +9,49 @@
 
 #include <algorithm>
 #include <map>
+#include <sstream>
 #include <vector>
 
-StructType::StructType(std::string name, std::vector<Field> fields)
+StructType::StructType(std::string name, std::vector<Field> fields, std::vector<Method> methods)
     : Type(name)
     , mName(std::move(name))
     , mFields(std::move(fields))
+    , mMethods(std::move(methods))
 {
+    if (std::isdigit(mName[0]))
+    {
+        for (size_t i = 0; i < mName.size(); ++i)
+        {
+            std::string len;
+            while (isdigit(mName[i]))
+            {
+                len += mName[i++];
+            }
+            if (len.empty()) continue;
+
+            int size = std::stoi(len);
+            mNames.emplace_back(&mName[i], &mName[i + size]);
+        }
+        for (auto it = mNames.begin(); it != mNames.end() - 1; ++it)
+        {
+            mFormattedName += *it + "::";
+        }
+        mFormattedName += mNames.back();
+    }
+    else
+    {
+        mFormattedName = mName;
+    }
 }
 
 std::string_view StructType::getName() const
 {
     return mName;
+}
+
+std::vector<std::string> StructType::getNames()
+{
+    return mNames;
 }
 
 std::vector<StructType::Field>& StructType::getFields()
@@ -50,6 +81,16 @@ int StructType::getFieldOffset(std::string fieldName)
     return std::find_if(mFields.begin(), mFields.end(), [&fieldName](const Field& field){
         return fieldName == field.name;
     }) - mFields.begin();
+}
+
+StructType::Method* StructType::getMethod(std::string_view methodName)
+{
+    auto it = std::find_if(mMethods.begin(), mMethods.end(), [&methodName](const Method& method){
+        return methodName == method.name;
+    });
+    if (it == mMethods.end()) return nullptr;
+
+    return &*it;
 }
 
 int StructType::getSize() const
@@ -93,6 +134,11 @@ std::string StructType::getMangleId() const
     return ret;
 }
 
+std::string_view StructType::getName()
+{
+    return mFormattedName;
+}
+
 bool StructType::isStructType() const
 {
     return true;
@@ -110,7 +156,7 @@ StructType* StructType::Get(std::string name)
     return it->get();
 }
 
-StructType* StructType::Create(std::string name, std::vector<StructType::Field> fields)
+StructType* StructType::Create(std::string name, std::vector<StructType::Field> fields, std::vector<Method> methods)
 {
     auto it = std::find_if(structTypes.begin(), structTypes.end(), [&name](const auto& type){
         return type->mName == name;
@@ -121,7 +167,7 @@ StructType* StructType::Create(std::string name, std::vector<StructType::Field> 
         return it->get();
     }
 
-    structTypes.push_back(std::make_unique<StructType>(name, std::move(fields)));
+    structTypes.push_back(std::make_unique<StructType>(name, std::move(fields), std::move(methods)));
     return structTypes.back().get();
 }
 
@@ -197,10 +243,11 @@ overloaded(Ts...) -> overloaded<Ts...>;
 
 static std::vector<PendingStructType*> pendings;
 
-PendingStructType::PendingStructType(lexer::Token token, std::string name, std::vector<StructType::Field> fields)
+PendingStructType::PendingStructType(lexer::Token token, std::string name, std::vector<StructType::Field> fields, std::vector<StructType::Method> methods)
     : Type(name)
     , mToken(std::move(token))
     , mFields(std::move(fields))
+    , mMethods(std::move(methods))
 {
 }
 
@@ -244,6 +291,16 @@ std::string PendingStructType::getMangleId() const
     return ret;
 }
 
+std::string_view PendingStructType::getName()
+{
+    std::string_view ret;
+    std::visit(overloaded{
+        [&ret](auto arg) { ret = arg.getName(); },
+        [](std::monostate arg) {}
+    }, mImpl);
+    return ret;
+}
+
 bool PendingStructType::isStructType() const
 {
     bool ret;
@@ -266,7 +323,7 @@ bool PendingStructType::isObjectType() const
 
 void PendingStructType::initComplete()
 {
-    mImpl = StructType(mName, mFields);
+    mImpl = StructType(mName, mFields, mMethods);
     std::erase(pendings, this);
 }
 
@@ -276,10 +333,11 @@ void PendingStructType::initIncomplete()
     std::erase(pendings, this);
 }
 
-void PendingStructType::setFields(std::vector<StructType::Field> fields)
+void PendingStructType::set(std::vector<StructType::Field> fields, std::vector<StructType::Method> methods)
 {
     mImpl = std::monostate();
-    mFields = fields;
+    mFields = std::move(fields);
+    mMethods = std::move(methods);
     pendings.push_back(this);
 }
 
@@ -293,10 +351,10 @@ lexer::Token& PendingStructType::getToken()
     return mToken;
 }
 
-PendingStructType* PendingStructType::Create(lexer::Token token, std::string name, std::vector<StructType::Field> fields)
+PendingStructType* PendingStructType::Create(lexer::Token token, std::string name, std::vector<StructType::Field> fields, std::vector<StructType::Method> methods)
 {
     void AddType(std::string name, std::unique_ptr<Type> type);
-    auto typePtr = std::make_unique<PendingStructType>(std::move(token), name, std::move(fields));
+    auto typePtr = std::make_unique<PendingStructType>(std::move(token), name, std::move(fields), std::move(methods));
 
     auto type = typePtr.get();
     pendings.push_back(type);
@@ -306,7 +364,7 @@ PendingStructType* PendingStructType::Create(lexer::Token token, std::string nam
     return type;
 }
 
-std::vector<PendingStructType*> PendingStructType::GetPending()
+std::vector<PendingStructType*>& PendingStructType::GetPending()
 {
     return pendings;
 }

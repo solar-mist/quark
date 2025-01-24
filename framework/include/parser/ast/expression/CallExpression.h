@@ -29,6 +29,8 @@ namespace parser
         Symbol* mBestViableFunction;
         Symbol mFakeFunction;
 
+        bool mIsMemberFunction;
+
         Symbol* getBestViableFunction(diagnostic::Diagnostics& diag);
     };
     using CallExpressionPtr = std::unique_ptr<CallExpression>;

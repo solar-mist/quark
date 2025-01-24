@@ -20,6 +20,7 @@ namespace mangle
 
     std::string MangleFunction(const std::vector<std::string>& names, FunctionType* type)
     {
+        if (names.back() == "main") return "main";
         std::string mangled = "_F";
         for (const auto& name : names)
         {

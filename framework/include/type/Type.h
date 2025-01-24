@@ -40,7 +40,7 @@ public:
     static bool Exists(const std::string& name);
     static Type* Get(const std::string& name);
 
-    std::string_view getName() { return mName; }
+    virtual std::string_view getName() { return mName; }
 
 protected:
     std::string mName;

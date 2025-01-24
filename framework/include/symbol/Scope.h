@@ -4,6 +4,7 @@
 #define VIPER_FRAMEWORK_SYMBOL_SCOPE_H 1
 
 #include "type/Type.h"
+#include "type/StructType.h"
 
 #include <vipir/IR/Value.h>
 #include <vipir/IR/BasicBlock.h>
@@ -37,6 +38,8 @@ struct Scope
 
     std::vector<std::string> getNamespaces();
 
+    StructType* findOwner();
+
     Symbol* getSymbol(unsigned long id);
     Symbol* resolveSymbol(std::string name);
     Symbol* resolveSymbol(std::vector<std::string> givenNames);
@@ -49,6 +52,8 @@ struct Scope
     bool isPureScope;
 
     Type* currentReturnType;
+    StructType* owner;
+
     std::vector<Symbol> symbols;
 
     std::vector<Scope*> children;

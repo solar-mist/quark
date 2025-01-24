@@ -4,6 +4,7 @@
 
 #include "type/StructType.h"
 #include "type/PointerType.h"
+#include "type/FunctionType.h"
 
 #include <vipir/IR/Instruction/GEPInst.h>
 #include <vipir/IR/Instruction/LoadInst.h>
@@ -65,13 +66,6 @@ namespace parser
         {
             diag.compilerWarning("unused", mErrorToken.getStartLocation(), mErrorToken.getEndLocation(), "expression result unused");
         }
-
-        if (!mStructType->hasField(mId))
-        {
-            diag.reportCompilerError(mErrorToken.getStartLocation(), mErrorToken.getEndLocation(), std::format("'{}class {}{}' has no member named '{}{}{}'",
-                fmt::bold, mStructType->getName(), fmt::defaults, fmt::bold, mId, fmt::defaults));
-            exit = true;
-        }
     }
 
     void MemberAccess::typeCheck(diagnostic::Diagnostics& diag, bool& exit)
@@ -127,10 +121,19 @@ namespace parser
             mType = structField->type;
         else
         {
-            diag.reportCompilerError(mErrorToken.getStartLocation(), mErrorToken.getEndLocation(), std::format("'{}class {}{}' has no member named '{}{}{}'",
-                fmt::bold, mStructType->getName(), fmt::defaults, fmt::bold, mId, fmt::defaults));
-            exit = true;
-            mType = Type::Get("error-type");
+            auto structMethod = mStructType->getMethod(mId);
+            if (structMethod)
+            {
+                auto functionType = static_cast<FunctionType*>(structMethod->type);
+                mType = functionType->getReturnType();
+            }
+            else
+            {
+                diag.reportCompilerError(mErrorToken.getStartLocation(), mErrorToken.getEndLocation(), std::format("class '{}{}{}' has no member named '{}{}{}'",
+                    fmt::bold, mStructType->getName(), fmt::defaults, fmt::bold, mId, fmt::defaults));
+                exit = true;
+                mType = Type::Get("error-type");
+            }
         }
     }
 

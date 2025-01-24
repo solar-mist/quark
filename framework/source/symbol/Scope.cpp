@@ -37,6 +37,7 @@ Scope::Scope(Scope* parent, std::string namespaceName, bool isGlobalScope, Type*
     , namespaceName(std::move(namespaceName))
     , isGlobalScope(isGlobalScope)
     , currentReturnType(currentReturnType)
+    , owner(nullptr)
 {
     if (parent && isGlobalScope) parent->children.push_back(this);
 }
@@ -58,6 +59,18 @@ std::vector<std::string> Scope::getNamespaces()
     }
     std::reverse(namespaces.begin(), namespaces.end());
     return namespaces;
+}
+
+StructType* Scope::findOwner()
+{
+    Scope* current = this;
+    while (current)
+    {
+        if (current->owner) return current->owner;
+
+        current = current->parent;
+    }
+    return nullptr;
 }
 
 Symbol* Scope::getSymbol(unsigned long id)

@@ -8,6 +8,8 @@ namespace test {
 
 func main() -> i32 {
     let x: xyz::Thing;
+    let y: xyz::Thing* = &x;
     x.field3.field2 = 1;
-    return test::abc();
+    x.field = 66;
+    return y->thing();
 }

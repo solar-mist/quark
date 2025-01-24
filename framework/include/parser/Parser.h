@@ -74,6 +74,7 @@ namespace parser
 
         FunctionPtr parseFunction(bool pure, bool exported);
         ClassDeclarationPtr parseClassDeclaration(bool exported);
+        ClassMethod parseClassMethod(bool pure);
         NamespacePtr parseNamespace(bool exported);
         void parseImport();
 

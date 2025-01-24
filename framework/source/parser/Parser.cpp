@@ -443,27 +443,115 @@ namespace parser
         expectToken(lexer::TokenType::LeftBrace);
         consume();
 
+        ScopePtr scope = std::make_unique<Scope>(mActiveScope, name, true);
+        mActiveScope = scope.get();
+
         std::vector<ClassField> fields;
+        std::vector<ClassMethod> methods;
         while (current().getTokenType() != lexer::TokenType::RightBrace)
         {
+            if (current().getTokenType() == lexer::TokenType::PureKeyword)
+            {
+                consume();
+                expectToken(lexer::TokenType::FuncKeyword);
+                methods.push_back(parseClassMethod(true));
+            }
+            else if (current().getTokenType() == lexer::TokenType::FuncKeyword)
+            {
+                methods.push_back(parseClassMethod(false));
+            }
+            else // Field
+            {
+                expectToken(lexer::TokenType::Identifier);
+                std::string fieldName = std::string(consume().getText());
+
+                expectToken(lexer::TokenType::Colon);
+                consume();
+
+                Type* fieldType = parseType();
+                fields.push_back(ClassField(fieldType, std::move(fieldName)));
+
+                if (current().getTokenType() != lexer::TokenType::RightBrace)
+                {
+                    expectToken(lexer::TokenType::Semicolon);
+                    consume();
+                }
+            }
+        }
+        consume();
+
+        mActiveScope = scope->parent;
+
+        auto namespaces = mActiveScope->getNamespaces();
+        namespaces.push_back(name);
+        auto mangled = StructType::MangleName(namespaces);
+        PendingStructType* pendingType = nullptr;
+        if (auto type = Type::Get(mangled))
+        {
+            pendingType = static_cast<PendingStructType*>(type);
+            auto& pendings = PendingStructType::GetPending();
+            std::erase(pendings, pendingType);
+        }
+        
+        auto classDef = std::make_unique<ClassDeclaration>(exported, false, std::move(name), std::move(fields), std::move(methods), std::move(scope), std::move(token));
+        if (pendingType) pendingType->initComplete();
+        return classDef;
+    }
+
+    ClassMethod Parser::parseClassMethod(bool pure)
+    {
+        consume(); // func
+
+        expectToken(lexer::TokenType::Identifier);
+        lexer::Token token = consume();
+        std::string name = std::string(token.getText());
+
+        std::vector<FunctionArgument> arguments;
+        std::vector<Type*> argumentTypes;
+        expectToken(lexer::TokenType::LeftParen);
+        consume();
+        while (current().getTokenType() != lexer::TokenType::RightParen)
+        {
             expectToken(lexer::TokenType::Identifier);
-            std::string fieldName = std::string(consume().getText());
+            auto name = std::string(consume().getText());
 
             expectToken(lexer::TokenType::Colon);
             consume();
 
-            Type* fieldType = parseType();
-            fields.push_back(ClassField(fieldType, std::move(fieldName)));
-
-            if (current().getTokenType() != lexer::TokenType::RightBrace)
-            {
-                expectToken(lexer::TokenType::Semicolon);
-                consume();
-            }
+            auto type = parseType();
+            arguments.emplace_back(type, std::move(name));
+            argumentTypes.push_back(type);
         }
         consume();
-        
-        return std::make_unique<ClassDeclaration>(exported, false, std::move(name), std::move(fields), mActiveScope, std::move(token));
+
+        expectToken(lexer::TokenType::RightArrow);
+        consume();
+        Type* returnType = parseType();
+
+        FunctionType* functionType = FunctionType::Create(returnType, std::move(argumentTypes));
+
+        ScopePtr scope = std::make_unique<Scope>(mActiveScope, "", false, returnType);
+        mActiveScope = scope.get();
+
+        std::vector<ASTNodePtr> body;
+        expectToken(lexer::TokenType::LeftBrace);
+        consume();
+
+        while (current().getTokenType() != lexer::TokenType::RightBrace)
+        {
+            body.push_back(parseExpression());
+            expectToken(lexer::TokenType::Semicolon);
+            consume();
+        }
+        consume();
+
+        mActiveScope = scope->parent;
+
+        return ClassMethod{
+            pure, std::move(name), functionType,
+            std::move(arguments), std::move(body), std::move(scope),
+            std::move(token)
+        };
     }
 
     void Parser::parseImport()
@@ -490,6 +578,8 @@ namespace parser
         {
             auto& import = *it;
 
+            // Don't import the current file
+            if (import.from == mTokens[0].getStartLocation().file) continue;
             // We only want to import each file once
             auto lookIt = std::find_if(allImports.begin(), allImports.end(), [import](const auto& imp){
                 return imp.from == import.from;

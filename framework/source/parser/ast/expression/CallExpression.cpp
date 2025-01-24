@@ -2,6 +2,7 @@
 
 #include "parser/ast/expression/CallExpression.h"
 #include "parser/ast/expression/VariableExpression.h"
+#include "parser/ast/expression/MemberAccess.h"
 
 #include "type/FunctionType.h"
 #include "type/PointerType.h"
@@ -11,6 +12,8 @@
 #include <vipir/IR/Function.h>
 #include <vipir/IR/Instruction/CallInst.h>
 #include <vipir/IR/Instruction/LoadInst.h>
+#include <vipir/IR/Instruction/GEPInst.h>
+#include <vipir/IR/Instruction/AddrInst.h>
 
 #include <algorithm>
 
@@ -21,6 +24,7 @@ namespace parser
         , mCallee(std::move(callee))
         , mParameters(std::move(parameters))
         , mFakeFunction({{},{}})
+        , mIsMemberFunction(false)
     {
     }
 
@@ -37,6 +41,40 @@ namespace parser
         }
 
         std::vector<vipir::Value*> parameters;
+        if (mIsMemberFunction)
+        {
+            // this parameter
+            if (auto var = dynamic_cast<VariableExpression*>(mCallee.get()))
+            {
+                parameters.push_back(mScope->resolveSymbol("this")->getLatestValue());
+            }
+            else
+            {
+                auto member = static_cast<MemberAccess*>(mCallee.get());
+                auto value = member->mStruct->codegen(builder, module, diag);
+                if (member->mStruct->getType()->isStructType())
+                {
+                    vipir::Value* self = vipir::getPointerOperand(value);
+
+                    vipir::Instruction* instruction = static_cast<vipir::Instruction*>(value);
+                    instruction->eraseFromParent();
+
+                    if (dynamic_cast<vipir::GEPInst*>(self))
+                    {
+                        value = self;
+                    }
+                    else
+                    {
+                        value = builder.CreateAddrOf(self);
+                    }
+                    parameters.push_back(value);
+                }
+                else
+                {
+                    parameters.push_back(value);
+                }
+            }
+        }
         for (auto& parameter : mParameters)
         {
             parameters.push_back(parameter->codegen(builder, module, diag));
@@ -124,29 +162,62 @@ namespace parser
 
     Symbol* CallExpression::getBestViableFunction(diagnostic::Diagnostics& diag)
     {
-        if (auto var = dynamic_cast<VariableExpression*>(mCallee.get()))
+        if (dynamic_cast<VariableExpression*>(mCallee.get()) || dynamic_cast<MemberAccess*>(mCallee.get()))
         {
-            if (var->getType()->isPointerType())
+            std::vector<Symbol*> candidateFunctions;
+            std::string errorName;
+
+            if (auto var = dynamic_cast<VariableExpression*>(mCallee.get()))
             {
-                auto pointerType = static_cast<PointerType*>(var->getType());
-                if (!pointerType->getPointeeType()->isFunctionType())
+                errorName = var->getName();
+                if (var->getType()->isPointerType())
                 {
-                    diag.reportCompilerError(
-                        mErrorToken.getStartLocation(),
-                        mErrorToken.getEndLocation(),
-                        std::format("'{}{}{}' cannot be used as a function",
-                            fmt::bold, var->getName(), fmt::defaults)
-                    );
-                    return nullptr;
+                    auto pointerType = static_cast<PointerType*>(var->getType());
+                    if (!pointerType->getPointeeType()->isFunctionType())
+                    {
+                        diag.reportCompilerError(
+                            mErrorToken.getStartLocation(),
+                            mErrorToken.getEndLocation(),
+                            std::format("'{}{}{}' cannot be used as a function",
+                                fmt::bold, var->getName(), fmt::defaults)
+                        );
+                        return nullptr;
+                    }
+                    mBestViableFunction = &mFakeFunction;
+                    mFakeFunction.type = pointerType->getPointeeType();
+                    mFakeFunction.name = var->getName();
+                    return mBestViableFunction;
                 }
-                mBestViableFunction = &mFakeFunction;
-                mFakeFunction.type = pointerType->getPointeeType();
-                mFakeFunction.name = var->getName();
-                return mBestViableFunction;
+                if (var->isImplicitMember())
+                {
+                    auto structType = mScope->owner;
+                    auto names = structType->getNames();
+                    names.push_back(var->getName());
+                    candidateFunctions = mScope->getCandidateFunctions(names);
+
+                    errorName = structType->getName();
+                    errorName += "::" + var->getName();
+
+                    mIsMemberFunction = true;
+                }
+                else
+                {
+                    candidateFunctions = mScope->getCandidateFunctions(var->getNames());
+                }
+            }
+            else if (auto memberAccess = dynamic_cast<MemberAccess*>(mCallee.get()))
+            {
+                auto structType = memberAccess->mStructType;
+                auto names = structType->getNames();
+                names.push_back(memberAccess->mId);
+                candidateFunctions = mScope->getCandidateFunctions(names);
+
+                errorName = structType->getName();
+                errorName += "::" + memberAccess->mId;
+
+                mIsMemberFunction = true;
             }
 
-            auto candidateFunctions = mScope->getCandidateFunctions(var->getNames());
-            
             // Find all viable functions
             for (auto it = candidateFunctions.begin(); it != candidateFunctions.end();)
             {
@@ -156,8 +227,8 @@ namespace parser
                 {
                     auto functionType = static_cast<FunctionType*>(candidate->type);
                     auto arguments = functionType->getArgumentTypes();
-                    if (arguments.size() != mParameters.size()) it = candidateFunctions.erase(it);
-                    else ++it;
+                    if (mIsMemberFunction) {if (arguments.size() != mParameters.size() + 1) candidateFunctions.erase(it); else ++it; }
+                    else { if (arguments.size() != mParameters.size()) it = candidateFunctions.erase(it); else ++it; }
                 }
             }
 
@@ -167,7 +238,8 @@ namespace parser
                 auto functionType = static_cast<FunctionType*>(candidate->type);
                 int score = 0;
                 bool disallowed = false;
-                for (size_t i = 0; i < mParameters.size(); ++i)
+                size_t i = mIsMemberFunction ? 1 : 0;
+                for (;i < mParameters.size(); ++i)
                 {
                     auto castLevel = mParameters[i]->getType()->castTo(functionType->getArgumentTypes()[i]);
                     int multiplier = 0;
@@ -189,7 +261,7 @@ namespace parser
                     mErrorToken.getStartLocation(),
                     mErrorToken.getEndLocation(),
                     std::format("no matching function for call to '{}{}(){}'",
-                        fmt::bold, var->getName(), fmt::defaults)
+                        fmt::bold, errorName, fmt::defaults)
                 );
                 return nullptr;
             }
@@ -205,7 +277,7 @@ namespace parser
                         mErrorToken.getStartLocation(),
                         mErrorToken.getEndLocation(),
                         std::format("call to '{}{}(){}' is ambiguous",
-                            fmt::bold, var->getName(), fmt::defaults)
+                            fmt::bold, errorName, fmt::defaults)
                     );
                     return nullptr;
                 }

@@ -27,9 +27,11 @@ namespace parser
         std::string getName();
         std::vector<std::string> getNames();
         bool isQualified();
+        bool isImplicitMember();
 
     private:
         std::vector<std::string> mNames;
+        bool mIsImplicitThis;
 
         std::string reconstructNames();
     };

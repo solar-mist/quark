@@ -5,6 +5,14 @@ export namespace xyz {
 	class Thing {
 		field: i32;
 		field3: Thing2;
+
+		func thing5() -> i32 {
+			return field;
+		}
+
+		func thing() -> i32 {
+			return thing5();
+		}
 	}
 
 	func y(q: i32) -> i32 {
