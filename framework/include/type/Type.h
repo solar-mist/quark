@@ -34,6 +34,7 @@ public:
     virtual bool isBooleanType()  const { return false; }
     virtual bool isPointerType()  const { return false; }
     virtual bool isStructType()   const { return false; }
+    virtual bool isEnumType()     const { return false; }
     virtual bool isObjectType()   const { return true; }
 
     static void Init();

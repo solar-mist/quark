@@ -36,6 +36,21 @@ namespace parser
             auto constantInt = vipir::ConstantInt::Get(module, 0, mValue->getType()->getVipirType());
             return builder.CreateCmpNE(value, constantInt);
         }
+        if (mType->isIntegerType() && mValue->getType()->isEnumType())
+        {
+            if (mType->getSize() == mValue->getType()->getSize())
+            {
+                return value;
+            }
+            if (mType->getSize() < mValue->getType()->getSize())
+            {
+                return builder.CreateTrunc(value, mType->getVipirType());
+            }
+            else
+            {
+                return builder.CreateSExt(value, mType->getVipirType());
+            }
+        }
         return nullptr; // Should be unreachable
     }
 
@@ -46,6 +61,7 @@ namespace parser
     
     void CastExpression::typeCheck(diagnostic::Diagnostics& diag, bool& exit)
     {
+        mValue->typeCheck(diag, exit);
     }
 
     bool CastExpression::triviallyImplicitCast(diagnostic::Diagnostics& diag, Type* destType)

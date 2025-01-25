@@ -261,6 +261,10 @@ PendingStructType::PendingStructType(lexer::Token token, std::string name, Type*
 
 int PendingStructType::getSize() const
 {
+    if (mBase)
+    {
+        return mBase->getSize();
+    }
     int ret;
     for (auto& field : mFields)
     {
@@ -314,6 +318,16 @@ bool PendingStructType::isStructType() const
     bool ret;
     std::visit(overloaded{
         [&ret](StructType arg) { ret = true; },
+        [&ret](auto arg) { ret = false; }
+    }, mImpl);
+    return ret;
+}
+
+bool PendingStructType::isEnumType() const
+{
+    bool ret;
+    std::visit(overloaded{
+        [&ret](EnumType arg) { ret = true; },
         [&ret](auto arg) { ret = false; }
     }, mImpl);
     return ret;

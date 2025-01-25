@@ -52,9 +52,14 @@ std::string EnumType::getMangleId() const
     return "_E" + mName;
 }
 
+bool EnumType::isEnumType() const
+{
+    return true;
+}
+
 vipir::Type* EnumType::getVipirType() const
 {
-    return vipir::Type::GetBooleanType();
+    return mBase->getVipirType();
 }
 
 std::string_view EnumType::getName()

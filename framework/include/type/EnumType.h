@@ -15,6 +15,8 @@ public:
     virtual CastLevel castTo(Type* destType) const override;
     virtual std::string getMangleId() const override;
 
+    virtual bool isEnumType() const override;
+
     virtual std::string_view getName() override;
 
     static EnumType* Create(std::string name, Type* base);

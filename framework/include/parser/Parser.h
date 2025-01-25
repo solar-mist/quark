@@ -21,6 +21,7 @@
 #include "parser/ast/expression/CallExpression.h"
 #include "parser/ast/expression/StringLiteral.h"
 #include "parser/ast/expression/MemberAccess.h"
+#include "parser/ast/expression/CastExpression.h"
 
 #include "lexer/Token.h"
 
@@ -89,6 +90,7 @@ namespace parser
         CallExpressionPtr parseCallExpression(ASTNodePtr callee);
         StringLiteralPtr parseStringLiteral();
         MemberAccessPtr parseMemberAccess(ASTNodePtr structNode, bool pointer);
+        CastExpressionPtr parseCastExpression();
     };
 }
 

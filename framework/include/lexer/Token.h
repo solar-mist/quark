@@ -27,6 +27,7 @@ namespace lexer
         PublicKeyword,
         NamespaceKeyword,
         EnumKeyword,
+        CastKeyword,
 
         // Symbols
         Plus,

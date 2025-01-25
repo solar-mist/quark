@@ -31,6 +31,7 @@ namespace lexer
         { "public",    TokenType::PublicKeyword },
         { "namespace", TokenType::NamespaceKeyword },
         { "enum",      TokenType::EnumKeyword },
+        { "cast",      TokenType::CastKeyword },
         { "i8",        TokenType::TypeKeyword },
         { "i16",       TokenType::TypeKeyword },
         { "i32",       TokenType::TypeKeyword },

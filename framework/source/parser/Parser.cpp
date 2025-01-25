@@ -343,6 +343,9 @@ namespace parser
             case lexer::TokenType::FalseKeyword:
                 return std::make_unique<BooleanLiteral>(mActiveScope, false, consume());
 
+            case lexer::TokenType::CastKeyword:
+                return parseCastExpression();
+
             default:
                 mDiag.reportCompilerError(
                     current().getStartLocation(),
@@ -841,5 +844,25 @@ namespace parser
         std::string text = std::string(token.getText());
 
         return std::make_unique<MemberAccess>(std::move(structNode), std::move(text), pointer, mActiveScope, peek(-2), std::move(token));
+    }
+
+    CastExpressionPtr Parser::parseCastExpression()
+    {
+        consume(); // cast
+
+        expectToken(lexer::TokenType::LessThan);
+        consume();
+
+        auto destType = parseType();
+
+        expectToken(lexer::TokenType::GreaterThan);
+        consume();
+        expectToken(lexer::TokenType::LeftParen);
+        consume();
+        auto expr = parseExpression();
+        expectToken(lexer::TokenType::RightParen);
+        consume();
+
+        return std::make_unique<CastExpression>(mActiveScope, std::move(expr), destType);
     }
 }

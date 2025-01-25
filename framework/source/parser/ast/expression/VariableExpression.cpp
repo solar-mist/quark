@@ -35,13 +35,23 @@ namespace parser
             return builder.CreateLoad(gep);
         }
 
+        if (mNames[1] == "guy")
+        {
+            auto x = 5;
+        }
+
         Symbol* symbol;
         if (isQualified()) symbol = mScope->resolveSymbol(mNames);
         else symbol = mScope->resolveSymbol(mNames.back());
 
         if (symbol->type->isFunctionType()) return symbol->getLatestValue();
         
-        auto latestValue = symbol->getLatestValue(builder.getInsertPoint());
+        vipir::Value* latestValue;
+        if (isQualified())
+            return symbol->getLatestValue();
+        else
+            latestValue = symbol->getLatestValue(builder.getInsertPoint());
+            
         if (dynamic_cast<vipir::AllocaInst*>(latestValue)) return builder.CreateLoad(latestValue);
         return latestValue;
     }

@@ -11,7 +11,7 @@ func main() -> i32 {
 
     let x: xyz::Thing;
     let y: xyz::Thing* = &x;
-    x.field3.field2 = 1;
+    x.field3.field2 = cast<i32>(z);
     x.field = 66;
     return y->thing();
 }

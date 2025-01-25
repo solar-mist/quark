@@ -98,6 +98,7 @@ public:
     virtual std::string_view getName() override;
 
     bool isStructType() const override;
+    bool isEnumType()   const override;
     bool isObjectType() const override;
 
     void initComplete();
