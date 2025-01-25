@@ -190,7 +190,7 @@ namespace parser
                 }
                 if (var->isImplicitMember())
                 {
-                    auto structType = mScope->owner;
+                    auto structType = mScope->findOwner();
                     auto names = structType->getNames();
                     names.push_back(var->getName());
                     candidateFunctions = mScope->getCandidateFunctions(names);

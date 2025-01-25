@@ -45,6 +45,8 @@ namespace lexer
                 return "import";
             case TokenType::ClassKeyword:
                 return "class";
+            case TokenType::PublicKeyword:
+                return "public";
             case TokenType::NamespaceKeyword:
                 return "namespace";
             case TokenType::Plus:

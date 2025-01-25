@@ -62,6 +62,25 @@ namespace parser
     {
         mStruct->semanticCheck(diag, exit, statement);
 
+        auto structField = mStructType->getField(mId);
+        if (structField && structField->priv && mStructType != mScope->findOwner())
+        {
+            diag.reportCompilerError(mErrorToken.getStartLocation(), mErrorToken.getEndLocation(), std::format("'{}{}{}' is a private member of class '{}{}{}",
+                fmt::bold, mId, fmt::defaults,
+                fmt::bold, mStructType->getName(), fmt::defaults
+            ));
+            exit = true;
+        }
+        auto structMethod = mStructType->getMethod(mId);
+        if (structMethod && structMethod->priv && mStructType != mScope->findOwner())
+        {
+            diag.reportCompilerError(mErrorToken.getStartLocation(), mErrorToken.getEndLocation(), std::format("'{}{}{}' is a private member of class '{}{}{}",
+                fmt::bold, mId, fmt::defaults,
+                fmt::bold, mStructType->getName(), fmt::defaults
+            ));
+            exit = true;
+        }
+
         if (statement)
         {
             diag.compilerWarning("unused", mErrorToken.getStartLocation(), mErrorToken.getEndLocation(), "expression result unused");

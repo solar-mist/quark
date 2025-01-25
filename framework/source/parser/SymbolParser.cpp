@@ -305,15 +305,21 @@ namespace parser
         std::vector<ClassMethod> methods;
         while (current().getTokenType() != lexer::TokenType::RightBrace)
         {
+            bool currentPrivate = true;
+            if (current().getTokenType() == lexer::TokenType::PublicKeyword)
+            {
+                consume();
+                currentPrivate = false;
+            }
             if (current().getTokenType() == lexer::TokenType::PureKeyword)
             {
                 consume();
                 expectToken(lexer::TokenType::FuncKeyword);
-                methods.push_back(parseClassMethod(true));
+                methods.push_back(parseClassMethod(currentPrivate, true));
             }
             else if (current().getTokenType() == lexer::TokenType::FuncKeyword)
             {
-                methods.push_back(parseClassMethod(false));
+                methods.push_back(parseClassMethod(currentPrivate, false));
             }
             else // Field
             {
@@ -324,7 +330,7 @@ namespace parser
                 consume();
 
                 Type* fieldType = parseType();
-                fields.push_back(ClassField(fieldType, std::move(fieldName)));
+                fields.push_back(ClassField(currentPrivate, fieldType, std::move(fieldName)));
 
                 if (current().getTokenType() != lexer::TokenType::RightBrace)
                 {
@@ -344,7 +350,7 @@ namespace parser
         return classDeclaration;
     }
 
-    ClassMethod SymbolParser::parseClassMethod(bool pure)
+    ClassMethod SymbolParser::parseClassMethod(bool priv, bool pure)
     {
         consume(); // func
 
@@ -392,9 +398,9 @@ namespace parser
         mActiveScope = scope->parent;
 
         return ClassMethod{
-            pure, std::move(name), functionType,
-            std::move(arguments), std::move(body), std::move(scope),
-            std::move(token)
+            priv, pure, std::move(name),
+            functionType, std::move(arguments), std::move(body),
+            std::move(scope), std::move(token)
         };
     }
 

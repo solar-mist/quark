@@ -3,14 +3,14 @@ export import test3;
 export namespace xyz {
 
 	class Thing {
-		field: i32;
-		field3: Thing2;
+		public field: i32;
+		public field3: Thing2;
 
 		func thing5() -> i32 {
 			return field;
 		}
 
-		func thing() -> i32 {
+		public func thing() -> i32 {
 			return thing5();
 		}
 	}

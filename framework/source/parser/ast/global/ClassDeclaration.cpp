@@ -12,8 +12,9 @@
 
 namespace parser
 {
-    ClassField::ClassField(Type* type, std::string name)
-        : type(type)
+    ClassField::ClassField(bool priv, Type* type, std::string name)
+        : priv(priv)
+        , type(type)
         , name(std::move(name))
     {
     }
@@ -33,11 +34,11 @@ namespace parser
         std::vector<StructType::Method> structTypeMethods;
         for (auto& field : mFields)
         {
-            structTypeFields.push_back(StructType::Field{false, field.name, field.type});
+            structTypeFields.push_back(StructType::Field{field.priv, field.name, field.type});
         }
         for (auto& method : mMethods)
         {
-            structTypeMethods.push_back(StructType::Method{false, method.name, method.type});
+            structTypeMethods.push_back(StructType::Method{method.priv, method.name, method.type});
         }
 
         auto namespaces = mScope->getNamespaces();

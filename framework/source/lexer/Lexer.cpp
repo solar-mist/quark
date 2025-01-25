@@ -28,6 +28,7 @@ namespace lexer
         { "export",    TokenType::ExportKeyword },
         { "import",    TokenType::ImportKeyword },
         { "class",     TokenType::ClassKeyword },
+        { "public",    TokenType::PublicKeyword },
         { "namespace", TokenType::NamespaceKeyword },
         { "i8",        TokenType::TypeKeyword },
         { "i16",       TokenType::TypeKeyword },

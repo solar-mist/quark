@@ -24,6 +24,7 @@ namespace lexer
         ExportKeyword,
         ImportKeyword,
         ClassKeyword,
+        PublicKeyword,
         NamespaceKeyword,
 
         // Symbols

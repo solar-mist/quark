@@ -2,7 +2,7 @@ export import test2;
 
 export {
 	class Thing2 {
-		field2: i32;
+		public field2: i32;
 	}
 
 	func x(q: i32) -> i32 {

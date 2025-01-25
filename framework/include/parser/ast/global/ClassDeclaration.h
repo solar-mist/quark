@@ -14,13 +14,15 @@ namespace parser
 {
     struct ClassField
     {
-        ClassField(Type* type, std::string name);
+        ClassField(bool priv, Type* type, std::string name);
+        bool priv;
         Type* type;
         std::string name;
     };
 
     struct ClassMethod
     {
+        bool priv;
         bool pure;
         std::string name;
         FunctionType* type;

@@ -31,7 +31,7 @@ namespace parser
         if (mIsImplicitThis)
         {
             vipir::Value* self = mScope->resolveSymbol("this")->getLatestValue();
-            vipir::Value* gep = builder.CreateStructGEP(self, mScope->owner->getFieldOffset(mNames.back()));
+            vipir::Value* gep = builder.CreateStructGEP(self, mScope->findOwner()->getFieldOffset(mNames.back()));
             return builder.CreateLoad(gep);
         }
 
@@ -52,9 +52,9 @@ namespace parser
     
     void VariableExpression::typeCheck(diagnostic::Diagnostics& diag, bool& exit)
     {
-        if (mScope->owner)
+        if (mScope->findOwner())
         {
-            auto structField = mScope->owner->getField(mNames.back());
+            auto structField = mScope->findOwner()->getField(mNames.back());
             if (structField)
             {
                 mType = structField->type;
@@ -63,7 +63,7 @@ namespace parser
             }
             else
             {
-                auto structMethod = mScope->owner->getMethod(mNames.back());
+                auto structMethod = mScope->findOwner()->getMethod(mNames.back());
                 if (structMethod)
                 {
                     auto functionType = static_cast<FunctionType*>(structMethod->type);
