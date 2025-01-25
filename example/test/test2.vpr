@@ -18,4 +18,9 @@ export namespace xyz {
 	func y(q: i32) -> i32 {
 		return q + 5;
 	}
+
+    enum guy {
+        qwerty,
+        uiop
+    }
 }

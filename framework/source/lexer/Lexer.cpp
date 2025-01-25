@@ -30,6 +30,7 @@ namespace lexer
         { "class",     TokenType::ClassKeyword },
         { "public",    TokenType::PublicKeyword },
         { "namespace", TokenType::NamespaceKeyword },
+        { "enum",      TokenType::EnumKeyword },
         { "i8",        TokenType::TypeKeyword },
         { "i16",       TokenType::TypeKeyword },
         { "i32",       TokenType::TypeKeyword },

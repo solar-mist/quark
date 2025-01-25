@@ -49,6 +49,8 @@ namespace lexer
                 return "public";
             case TokenType::NamespaceKeyword:
                 return "namespace";
+            case TokenType::EnumKeyword:
+                return "enum";
             case TokenType::Plus:
                 return "+";
             case TokenType::Minus:

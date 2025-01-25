@@ -7,6 +7,8 @@ namespace test {
 }
 
 func main() -> i32 {
+    let z: xyz::guy = xyz::guy::qwerty;
+
     let x: xyz::Thing;
     let y: xyz::Thing* = &x;
     x.field3.field2 = 1;

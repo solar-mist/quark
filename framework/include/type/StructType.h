@@ -4,6 +4,7 @@
 #define VIPER_FRAMEWORK_TYPE_STRUCT_TYPE_H 1
 
 #include "type/Type.h"
+#include "type/EnumType.h"
 
 #include "lexer/Token.h"
 
@@ -86,7 +87,8 @@ private:
 class PendingStructType : public Type
 {
 public:
-    PendingStructType(lexer::Token token, std::string name, std::vector<StructType::Field> fields, std::vector<StructType::Method> methods);
+    PendingStructType(lexer::Token token, std::string name, std::vector<StructType::Field> fields, std::vector<StructType::Method> methods); // For classes
+    PendingStructType(lexer::Token token, std::string name, Type* base); // For enums
 
     virtual int getSize() const override;
     virtual vipir::Type* getVipirType() const override;
@@ -106,13 +108,16 @@ public:
     lexer::Token& getToken();
 
     static PendingStructType* Create(lexer::Token token, std::string name, std::vector<StructType::Field> fields, std::vector<StructType::Method> methods);
+    static PendingStructType* Create(lexer::Token token, std::string name, Type* base);
     static std::vector<PendingStructType*>& GetPending();
 
 private:
     lexer::Token mToken;
-    std::variant<std::monostate, StructType, IncompleteStructType> mImpl;
+    std::variant<std::monostate, StructType, IncompleteStructType, EnumType> mImpl;
     std::vector<StructType::Field> mFields;
     std::vector<StructType::Method> mMethods;
+
+    Type* mBase;
 };
 
 #endif // VIPER_FRAMEWORK_TYPE_STRUCT_TYPE_H

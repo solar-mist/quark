@@ -238,6 +238,9 @@ namespace parser
             case lexer::TokenType::NamespaceKeyword:
                 return parseNamespace(exported);
 
+            case lexer::TokenType::EnumKeyword:
+                return parseEnum(exported);
+
             case lexer::TokenType::EndOfFile:
                 consume();
                 return nullptr;
@@ -431,6 +434,58 @@ namespace parser
         mActiveScope = scope->parent;
 
         return std::make_unique<Namespace>(exported, std::move(name), std::move(body), std::move(scope), std::move(token));
+    }
+
+    EnumDeclarationPtr Parser::parseEnum(bool exported)
+    {
+        consume(); // enum
+
+        lexer::Token token = consume();
+        std::string name = std::string(token.getText());
+
+        Type* base = Type::Get("i32");
+
+        if (current().getTokenType() == lexer::TokenType::Colon)
+        {
+            consume();
+            base = parseType();
+        }
+
+        ScopePtr scope = std::make_unique<Scope>(mActiveScope, name, true);
+        mActiveScope = scope.get();
+
+        std::vector<EnumField> fields;
+        int nextValue = 0;
+        
+        expectToken(lexer::TokenType::LeftBrace);
+        consume();
+        while (current().getTokenType() != lexer::TokenType::RightBrace)
+        {
+            expectToken(lexer::TokenType::Identifier);
+            std::string name = std::string(consume().getText());
+            int value = nextValue;
+
+            if (current().getTokenType() == lexer::TokenType::Equal)
+            {
+                consume();
+                expectToken(lexer::TokenType::IntegerLiteral);
+                value = std::stoi(std::string(consume().getText()));
+            }
+
+            fields.push_back(EnumField{std::move(name), static_cast<unsigned long long>(value)});
+            nextValue = value + 1;
+
+            if (current().getTokenType() != lexer::TokenType::RightBrace)
+            {
+                expectToken(lexer::TokenType::Comma);
+                consume();
+            }
+        }
+        consume();
+
+        mActiveScope = scope->parent;
+
+        return std::make_unique<EnumDeclaration>(exported, false, std::move(name), std::move(fields), base, std::move(scope), std::move(token));
     }
 
     ClassDeclarationPtr Parser::parseClassDeclaration(bool exported)

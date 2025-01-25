@@ -23,6 +23,7 @@ set(SOURCES
     "source/parser/ast/global/Function.cpp"
     "source/parser/ast/global/ClassDeclaration.cpp"
     "source/parser/ast/global/Namespace.cpp"
+    "source/parser/ast/global/EnumDeclaration.cpp"
     "source/parser/ast/statement/ReturnStatement.cpp"
     "source/parser/ast/statement/VariableDeclaration.cpp"
     "source/parser/ast/statement/IfStatement.cpp"
@@ -43,6 +44,7 @@ set(SOURCES
     "source/type/BooleanType.cpp"
     "source/type/PointerType.cpp"
     "source/type/StructType.cpp"
+    "source/type/EnumType.cpp"
     "source/type/ErrorType.cpp"
 
     "source/diagnostic/Diagnostic.cpp"
@@ -64,6 +66,7 @@ set(HEADERS
     "include/parser/ast/global/Function.h"
     "include/parser/ast/global/ClassDeclaration.h"
     "include/parser/ast/global/Namespace.h"
+    "include/parser/ast/global/EnumDeclaration.h"
     "include/parser/ast/statement/ReturnStatement.h"
     "include/parser/ast/statement/VariableDeclaration.h"
     "include/parser/ast/statement/IfStatement.h"
@@ -84,6 +87,7 @@ set(HEADERS
     "include/type/BooleanType.h"
     "include/type/PointerType.h"
     "include/type/StructType.h"
+    "include/type/EnumType.h"
     "include/type/ErrorType.h"
 
     "include/diagnostic/Diagnostic.h"

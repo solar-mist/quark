@@ -8,6 +8,7 @@
 #include "parser/ast/global/Function.h"
 #include "parser/ast/global/ClassDeclaration.h"
 #include "parser/ast/global/Namespace.h"
+#include "parser/ast/global/EnumDeclaration.h"
 
 #include "parser/ast/expression/VariableExpression.h"
 
@@ -61,6 +62,7 @@ namespace parser
         ClassMethod parseClassMethod(bool priv, bool pure);
         void parseImport(bool exported);
         NamespacePtr parseNamespace(bool exported);
+        EnumDeclarationPtr parseEnum(bool exported);
 
         VariableExpressionPtr parseVariableExpression();
     };

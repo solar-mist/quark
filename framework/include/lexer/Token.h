@@ -26,6 +26,7 @@ namespace lexer
         ClassKeyword,
         PublicKeyword,
         NamespaceKeyword,
+        EnumKeyword,
 
         // Symbols
         Plus,

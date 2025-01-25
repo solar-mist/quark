@@ -248,6 +248,14 @@ PendingStructType::PendingStructType(lexer::Token token, std::string name, std::
     , mToken(std::move(token))
     , mFields(std::move(fields))
     , mMethods(std::move(methods))
+    , mBase(nullptr)
+{
+}
+
+PendingStructType::PendingStructType(lexer::Token token, std::string name, Type* base)
+    : Type(name)
+    , mToken(std::move(token))
+    , mBase(base)
 {
 }
 
@@ -316,6 +324,7 @@ bool PendingStructType::isObjectType() const
     bool ret;
     std::visit(overloaded{
         [&ret](StructType arg) { ret = true; },
+        [&ret](EnumType arg) { ret = true; },
         [&ret](auto arg) { ret = false; }
     }, mImpl);
     return ret;
@@ -323,7 +332,10 @@ bool PendingStructType::isObjectType() const
 
 void PendingStructType::initComplete()
 {
-    mImpl = StructType(mName, mFields, mMethods);
+    if (mBase)
+        mImpl = EnumType(mName, mBase);
+    else
+        mImpl = StructType(mName, mFields, mMethods);
     std::erase(pendings, this);
 }
 
@@ -355,6 +367,19 @@ PendingStructType* PendingStructType::Create(lexer::Token token, std::string nam
 {
     void AddType(std::string name, std::unique_ptr<Type> type);
     auto typePtr = std::make_unique<PendingStructType>(std::move(token), name, std::move(fields), std::move(methods));
+
+    auto type = typePtr.get();
+    pendings.push_back(type);
+
+    AddType(name, std::move(typePtr));
+
+    return type;
+}
+
+PendingStructType* PendingStructType::Create(lexer::Token token, std::string name, Type* base)
+{
+    void AddType(std::string name, std::unique_ptr<Type> type);
+    auto typePtr = std::make_unique<PendingStructType>(std::move(token), name, base);
 
     auto type = typePtr.get();
     pendings.push_back(type);
