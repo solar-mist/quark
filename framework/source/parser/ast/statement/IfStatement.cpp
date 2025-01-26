@@ -16,6 +16,20 @@ namespace parser
     {
     }
 
+    std::vector<ASTNode*> IfStatement::getContained() const
+    {
+        std::vector<ASTNode*> ret = {mBody.get(), mCondition.get()};
+        if (mElseBody) ret.push_back(mElseBody.get());
+        return ret;
+    }
+
+    ASTNodePtr IfStatement::clone(Scope* in)
+    {
+        auto scope = mOwnScope->clone(in);
+        auto scopePtr = scope.get();
+        return std::make_unique<IfStatement>(mCondition->clone(in), mBody->clone(scopePtr), mElseBody?mElseBody->clone(scopePtr):nullptr, std::move(scope), mErrorToken);
+    }
+
     vipir::Value* IfStatement::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
     {
         vipir::Value* condition = mCondition->codegen(builder, module, diag);

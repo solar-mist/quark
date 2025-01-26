@@ -27,7 +27,7 @@ namespace parser
         , mMethods(std::move(methods))
         , mOwnScope(std::move(ownScope))
     {
-        mSymbolId = mScope->symbols.emplace_back(mName, mType).id;
+        mSymbolId = mScope->symbols.emplace_back(mName, mType, mScope).id;
         mScope->getSymbol(mSymbolId)->exported = exported;
 
         std::vector<StructType::Field> structTypeFields;
@@ -74,18 +74,60 @@ namespace parser
             method.type = FunctionType::Create(method.type->getReturnType(), std::move(argumentTypes));
 
             auto scope = method.ownScope->parent;
-            method.symbolId = scope->symbols.emplace_back(method.name, method.type).id;
+            method.symbolId = scope->symbols.emplace_back(method.name, method.type, scope).id;
             scope->getSymbol(method.symbolId)->pure = method.pure;
             scope->getSymbol(method.symbolId)->exported = exported;
 
             method.arguments.insert(method.arguments.begin(), FunctionArgument(thisPtrType, "this"));
             for (auto& argument : method.arguments)
             {
-                method.ownScope->symbols.emplace_back(argument.name, argument.type);
+                method.ownScope->symbols.emplace_back(argument.name, argument.type, method.ownScope.get());
             }
             method.ownScope->isPureScope = method.pure;
             method.ownScope->owner = static_cast<StructType*>(thisType);
         }
+    }
+
+    std::vector<ASTNode*> ClassDeclaration::getContained() const
+    {
+        std::vector<ASTNode*> ret;
+        for (auto& method : mMethods)
+        {
+            for (auto& node : method.body)
+            {
+                ret.push_back(node.get());
+            }
+        }
+        return ret;
+    }
+
+    ASTNodePtr ClassDeclaration::clone(Scope* in)
+    {
+        auto classScope = mOwnScope->clone(in);
+
+        std::vector<ClassMethod> methods;
+        for (auto& method : mMethods)
+        {
+            auto scope = method.ownScope->clone(classScope.get());
+
+            std::vector<ASTNodePtr> bodyClone;
+            bodyClone.reserve(method.body.size());
+            for (auto& node : method.body)
+            {
+                bodyClone.push_back(node->clone(scope.get()));
+            }
+            methods.push_back(ClassMethod{
+                method.priv, method.pure, method.name,
+                method.type, method.arguments, std::move(bodyClone),
+                std::move(scope), method.errorToken
+            });
+        }
+        return std::make_unique<ClassDeclaration>(false, false, mName, mFields, std::move(methods), std::move(classScope), mErrorToken);
+    }
+
+    Symbol* ClassDeclaration::getSymbol()
+    {
+        return mScope->getSymbol(mSymbolId);
     }
 
     vipir::Value* ClassDeclaration::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)

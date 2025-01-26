@@ -13,7 +13,18 @@ namespace parser
         , mName(std::move(name))
         , mInitValue(std::move(initValue))
     {
-        mScope->symbols.emplace_back(mName, mType);
+        mScope->symbols.emplace_back(mName, mType, mScope);
+    }
+
+    std::vector<ASTNode*> VariableDeclaration::getContained() const
+    {
+        if (mInitValue) return {mInitValue.get()};
+        return {};
+    }
+
+    ASTNodePtr VariableDeclaration::clone(Scope* in)
+    {
+        return std::make_unique<VariableDeclaration>(in, mName, mType, mInitValue?mInitValue->clone(in):0, mErrorToken);
     }
 
     vipir::Value* VariableDeclaration::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)

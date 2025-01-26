@@ -532,8 +532,8 @@ namespace parser
         }
 
         if (names.size() == 1)
-            return std::make_unique<VariableExpression>(mActiveScope, std::move(names[0]), std::move(token));
+            return std::make_unique<VariableExpression>(mActiveScope, std::move(names[0]), std::move(token), std::vector<Type*>{});
 
-        return std::make_unique<VariableExpression>(mActiveScope, std::move(names), std::move(token));
+        return std::make_unique<VariableExpression>(mActiveScope, std::move(names), std::move(token), std::vector<Type*>{});
     }
 }

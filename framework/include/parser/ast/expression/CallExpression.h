@@ -16,6 +16,9 @@ namespace parser
     public:
         CallExpression(Scope* scope, ASTNodePtr callee, std::vector<ASTNodePtr> parameters);
 
+        virtual std::vector<ASTNode*> getContained() const override;
+        virtual ASTNodePtr clone(Scope* in) override;
+
         virtual vipir::Value* codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag) override;
 
         virtual void semanticCheck(diagnostic::Diagnostics& diag, bool& exit, bool statement) override;
@@ -31,7 +34,7 @@ namespace parser
 
         bool mIsMemberFunction;
 
-        Symbol* getBestViableFunction(diagnostic::Diagnostics& diag);
+        Symbol* getBestViableFunction(diagnostic::Diagnostics& diag, bool& exit);
     };
     using CallExpressionPtr = std::unique_ptr<CallExpression>;
 }

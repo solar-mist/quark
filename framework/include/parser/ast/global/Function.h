@@ -26,6 +26,11 @@ namespace parser
     public:
         Function(bool exported, bool pure, std::string name, FunctionType* type, std::vector<FunctionArgument> arguments, std::vector<ASTNodePtr> body, ScopePtr scope, lexer::Token token);
 
+        virtual void setTemplateType(Type* templateType, Type* type) override;
+        virtual std::vector<ASTNode*> getContained() const override;
+        virtual ASTNodePtr clone(Scope* in) override;
+        virtual Symbol* getSymbol() override;
+
         virtual vipir::Value* codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag) override;
 
         virtual void semanticCheck(diagnostic::Diagnostics& diag, bool& exit, bool statement) override;

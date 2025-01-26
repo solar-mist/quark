@@ -43,6 +43,7 @@ namespace parser
         Parser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, ImportManager& importManager, Scope* globalScope);
 
         std::vector<ASTNodePtr> parse();
+        std::vector<TemplateSymbol*> getTemplatedSymbols();
 
     private:
         std::vector<lexer::Token>& mTokens;
@@ -55,6 +56,8 @@ namespace parser
         bool mExportBlock;
         ImportManager& mImportManager;
 
+        std::vector<TemplateParameter> mActiveTemplateParameters;
+        std::vector<TemplateSymbol*> mTemplateSymbols;
         std::function<void(ASTNodePtr&)> mInsertNodeFn;
 
 
@@ -79,6 +82,7 @@ namespace parser
         ClassMethod parseClassMethod(bool priv, bool pure);
         NamespacePtr parseNamespace(bool exported);
         EnumDeclarationPtr parseEnum(bool exported);
+        void parseTemplate(bool exported);
         void parseImport();
 
         ReturnStatementPtr parseReturnStatement();

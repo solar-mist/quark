@@ -60,6 +60,23 @@ namespace parser
                 break; // Unreachable
 		}
 	}
+	BinaryExpression::BinaryExpression(Scope* scope, ASTNodePtr left, Operator op, ASTNodePtr right, lexer::Token token)
+		: ASTNode(scope, token)
+		, mLeft(std::move(left))
+		, mRight(std::move(right))
+        , mOperator(op)
+	{
+	}
+
+    std::vector<ASTNode*> BinaryExpression::getContained() const
+    {
+        return {mLeft.get(), mRight.get()};
+    }
+
+    ASTNodePtr BinaryExpression::clone(Scope* in)
+    {
+        return std::make_unique<BinaryExpression>(in, mLeft->clone(in), mOperator, mRight->clone(in), mErrorToken);
+    }
 
     vipir::Value* BinaryExpression::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
     {

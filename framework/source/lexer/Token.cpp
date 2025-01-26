@@ -53,6 +53,10 @@ namespace lexer
                 return "enum";
             case TokenType::CastKeyword:
                 return "cast";
+            case TokenType::TemplateKeyword:
+                return "template";
+            case TokenType::TypenameKeyword:
+                return "typename";
             case TokenType::Plus:
                 return "+";
             case TokenType::Minus:

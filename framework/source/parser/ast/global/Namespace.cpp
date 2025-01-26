@@ -12,6 +12,29 @@ namespace parser
     {
     }
 
+    std::vector<ASTNode*> Namespace::getContained() const
+    {
+        std::vector<ASTNode*> ret;
+        for (auto& node : mBody)
+        {
+            ret.push_back(node.get());
+        }
+        return ret;
+    }
+
+    ASTNodePtr Namespace::clone(Scope* in)
+    {
+        auto scope = mScope->clone(in);
+        
+        std::vector<ASTNodePtr> bodyClone;
+        bodyClone.reserve(mBody.size());
+        for (auto& node : mBody)
+        {
+            bodyClone.push_back(node->clone(scope.get()));
+        }
+        return std::make_unique<Namespace>(false, mName, std::move(bodyClone), std::move(scope), mErrorToken);
+    }
+
     vipir::Value* Namespace::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
     {
         for (auto& node : mBody)

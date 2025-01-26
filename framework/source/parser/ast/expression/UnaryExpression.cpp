@@ -39,6 +39,23 @@ namespace parser
                 break; // Unreachable
         }
 	}
+	UnaryExpression::UnaryExpression(Scope* scope, ASTNodePtr operand, Operator op, bool postfix, lexer::Token token)
+		: ASTNode(scope, token)
+        , mOperand(std::move(operand))
+        , mOperator(op)
+        , mPostfix(postfix)
+	{
+	}
+
+    std::vector<ASTNode*> UnaryExpression::getContained() const
+    {
+        return {mOperand.get()};
+    }
+
+    ASTNodePtr UnaryExpression::clone(Scope* in)
+    {
+        return std::make_unique<UnaryExpression>(in, mOperand->clone(in), mOperator, mPostfix, mErrorToken);
+    }
 
     vipir::Value* UnaryExpression::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
     {

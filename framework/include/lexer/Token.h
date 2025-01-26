@@ -28,6 +28,8 @@ namespace lexer
         NamespaceKeyword,
         EnumKeyword,
         CastKeyword,
+        TemplateKeyword,
+        TypenameKeyword,
 
         // Symbols
         Plus,

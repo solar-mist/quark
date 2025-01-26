@@ -27,6 +27,16 @@ namespace parser
     {
     }
 
+    std::vector<ASTNode*> MemberAccess::getContained() const
+    {
+        return {mStruct.get()};
+    }
+
+    ASTNodePtr MemberAccess::clone(Scope* in)
+    {
+        return std::make_unique<MemberAccess>(mStruct->clone(in), mId, mPointer, in, mOperatorToken, mErrorToken);
+    }
+
     vipir::Value* MemberAccess::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
     {
         vipir::Value* struc;

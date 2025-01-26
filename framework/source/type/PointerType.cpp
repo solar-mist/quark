@@ -51,6 +51,15 @@ std::string PointerType::getMangleId() const
     return "p" + mPointeeType->getMangleId();
 }
 
+Type* PointerType::replaceWith(Type* from, Type* to)
+{
+    if (mPointeeType == from)
+    {
+        return PointerType::Get(to);
+    }
+    return this;
+}
+
 bool PointerType::isPointerType() const
 {
     return true;

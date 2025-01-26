@@ -87,6 +87,14 @@ int main(int argc, char** argv)
     Option::ParseOptimizingFlags(options, module, diag);
      
     vipir::IRBuilder builder;
+    auto templateSymbols = parser.getTemplatedSymbols();
+    for (auto& symbol : templateSymbols)
+    {
+        for (auto& instantiation : symbol->instantiations)
+        {
+            instantiation.body->codegen(builder, module, diag);
+        }
+    }
     for (auto& node : ast)
     {
         node->codegen(builder, module, diag);

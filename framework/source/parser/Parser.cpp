@@ -6,6 +6,7 @@
 
 #include "type/PointerType.h"
 #include "type/StructType.h"
+#include "type/TemplateType.h"
 
 #include <cinttypes>
 #include <filesystem>
@@ -42,6 +43,11 @@ namespace parser
         }
 
         return ast;
+    }
+
+    std::vector<TemplateSymbol*> Parser::getTemplatedSymbols()
+    {
+        return mTemplateSymbols;
     }
 
     lexer::Token Parser::current() const
@@ -168,6 +174,15 @@ namespace parser
         int save = mPosition;
         if (current().getTokenType() == lexer::TokenType::Identifier)
         {
+            auto it = std::find_if(mActiveTemplateParameters.begin(), mActiveTemplateParameters.end(), [tok=current()](auto& param){
+                return param.name == tok.getText();
+            });
+            if (it != mActiveTemplateParameters.end())
+            {
+                consume();
+                return it->type;
+            }
+
             auto var = parseVariableExpression();
             auto names = var->getNames();
             auto mangled = StructType::MangleName(names);
@@ -203,6 +218,10 @@ namespace parser
     {
         switch (current().getTokenType())
         {
+            case lexer::TokenType::TemplateKeyword:
+                parseTemplate(exported);
+                return nullptr;
+
             case lexer::TokenType::ExportKeyword:
                 consume();
                 if (current().getTokenType() == lexer::TokenType::LeftBrace)
@@ -489,6 +508,45 @@ namespace parser
         mActiveScope = scope->parent;
 
         return std::make_unique<EnumDeclaration>(exported, false, std::move(name), std::move(fields), base, std::move(scope), std::move(token));
+    }
+
+    void Parser::parseTemplate(bool exported)
+    {
+        consume(); // template
+
+        expectToken(lexer::TokenType::LessThan);
+        consume();
+
+        std::vector<TemplateParameter> parameters;
+        while (current().getTokenType() != lexer::TokenType::GreaterThan)
+        {
+            expectToken(lexer::TokenType::Identifier);
+            std::string name = std::string(consume().getText());
+
+            expectToken(lexer::TokenType::Colon);
+            consume();
+
+            expectToken(lexer::TokenType::TypenameKeyword);
+            consume();
+            auto type = TemplateType::Create(name);
+            parameters.push_back(TemplateParameter{std::move(name), type});
+
+            if (current().getTokenType() != lexer::TokenType::GreaterThan)
+            {
+                expectToken(lexer::TokenType::Comma);
+                consume();
+            }
+        }
+        consume();
+        
+        mActiveTemplateParameters = parameters;
+        auto body = parseGlobal(exported);
+        mActiveTemplateParameters.clear();
+
+        // Probably not the best to use .back() here just in case
+        auto symbol = body->getSymbol();
+        symbol->templated = std::make_unique<TemplateSymbol>(std::move(parameters), std::move(body));
+        mTemplateSymbols.push_back(symbol->templated.get());
     }
 
     ClassDeclarationPtr Parser::parseClassDeclaration(bool exported)
@@ -803,10 +861,27 @@ namespace parser
             names.push_back(std::string(token.getText()));
         }
 
-        if (names.size() == 1)
-            return std::make_unique<VariableExpression>(mActiveScope, std::move(names[0]), std::move(token));
+        std::vector<Type*> templateParameters;
+        if (current().getTokenType() == lexer::TokenType::LessThan)
+        {
+            consume();
+            while (current().getTokenType() != lexer::TokenType::GreaterThan)
+            {
+                templateParameters.push_back(parseType());
 
-        return std::make_unique<VariableExpression>(mActiveScope, std::move(names), std::move(token));
+                if (current().getTokenType() != lexer::TokenType::GreaterThan)
+                {
+                    expectToken(lexer::TokenType::Comma);
+                    consume();
+                }
+            }
+            consume();
+        }
+
+        if (names.size() == 1)
+            return std::make_unique<VariableExpression>(mActiveScope, std::move(names[0]), std::move(token), std::move(templateParameters));
+
+        return std::make_unique<VariableExpression>(mActiveScope, std::move(names), std::move(token), std::move(templateParameters));
     }
 
     CallExpressionPtr Parser::parseCallExpression(ASTNodePtr callee)

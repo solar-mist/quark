@@ -17,6 +17,16 @@ namespace parser
     {
     }
 
+    std::vector<ASTNode*> CastExpression::getContained() const
+    {
+        return {mValue.get()};
+    }
+
+    ASTNodePtr CastExpression::clone(Scope* in)
+    {
+        return std::make_unique<CastExpression>(in, mValue->clone(in), mType);
+    }
+
     vipir::Value* CastExpression::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
     {
         auto value = mValue->codegen(builder, module, diag);

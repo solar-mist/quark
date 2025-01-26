@@ -7,6 +7,7 @@
 #include "type/FunctionType.h"
 #include "type/PointerType.h"
 
+#include <functional>
 #include <vipir/Module.h>
 
 #include <vipir/IR/Function.h>
@@ -23,9 +24,30 @@ namespace parser
         : ASTNode(scope, callee->getErrorToken())
         , mCallee(std::move(callee))
         , mParameters(std::move(parameters))
-        , mFakeFunction({{},{}})
+        , mFakeFunction({{},{},{}})
         , mIsMemberFunction(false)
     {
+    }
+
+    std::vector<ASTNode*> CallExpression::getContained() const
+    {
+        std::vector<ASTNode*> ret = {mCallee.get()};
+        for (auto& param : mParameters)
+        {
+            ret.push_back(param.get());
+        }
+        return ret;
+    }
+
+    ASTNodePtr CallExpression::clone(Scope* in)
+    {
+        std::vector<ASTNodePtr> parameters;
+        parameters.reserve(mParameters.size());
+        for (auto& param : mParameters)
+        {
+            parameters.push_back(param->clone(in));
+        }
+        return std::make_unique<CallExpression>(in, mCallee->clone(in), std::move(parameters));
     }
 
     vipir::Value* CallExpression::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
@@ -111,7 +133,7 @@ namespace parser
         {
             parameter->typeCheck(diag, exit);
         }
-        mBestViableFunction = getBestViableFunction(diag);
+        mBestViableFunction = getBestViableFunction(diag, exit);
 
         if (!mBestViableFunction)
         {
@@ -160,7 +182,7 @@ namespace parser
         bool disallowed;
     };
 
-    Symbol* CallExpression::getBestViableFunction(diagnostic::Diagnostics& diag)
+    Symbol* CallExpression::getBestViableFunction(diagnostic::Diagnostics& diag, bool& exit)
     {
         if (dynamic_cast<VariableExpression*>(mCallee.get()) || dynamic_cast<MemberAccess*>(mCallee.get()))
         {
@@ -199,6 +221,43 @@ namespace parser
                     errorName += "::" + var->getName();
 
                     mIsMemberFunction = true;
+                }
+                // Templated function call so we need to instantiate
+                else if (var->mTemplateParameters.size() > 0)
+                {
+                    auto symbol = mScope->resolveSymbol(var->getNames());
+                    auto it = std::find_if(symbol->templated->instantiations.begin(), symbol->templated->instantiations.end(), [&var](auto& inst){
+                        return inst.parameters == var->mTemplateParameters;
+                    });
+                    if (it != symbol->templated->instantiations.end())
+                    {
+                        candidateFunctions.push_back(it->body->getSymbol());
+                    }
+                    else
+                    {
+                        auto id = symbol->id;
+                        auto scope = symbol->owner;
+
+                        auto clone = symbol->templated->body->clone(symbol->templated->body->getScope());
+                        
+                        symbol = scope->getSymbol(id);
+
+                        for (int i = 0; i < symbol->templated->parameters.size(); ++i)
+                        {
+                            std::function<void(ASTNode* node)> checkOne;
+                            checkOne = [&](ASTNode* node) {
+                                node->setTemplateType(symbol->templated->parameters[i].type, var->mTemplateParameters[i]);
+                                for (auto child : node->getContained())
+                                {
+                                    checkOne(child);
+                                }
+                            };
+                            checkOne(clone.get());
+                        }
+                        clone->typeCheck(diag, exit);
+                        candidateFunctions.push_back(clone->getSymbol());
+                        symbol->templated->instantiations.push_back({std::move(clone), var->mTemplateParameters});
+                    }
                 }
                 else
                 {

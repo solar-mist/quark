@@ -7,7 +7,7 @@ export namespace xyz {
 		public field3: Thing2;
 
 		func thing5() -> i32 {
-			return field3.field2;
+			return field;
 		}
 
 		public func thing() -> i32 {

@@ -12,6 +12,17 @@ namespace parser
     {
     }
 
+    std::vector<ASTNode*> ReturnStatement::getContained() const
+    {
+        if (mReturnValue) return {mReturnValue.get()};
+        return {};
+    }
+
+    ASTNodePtr ReturnStatement::clone(Scope* in)
+    {
+        return std::make_unique<ReturnStatement>(in, mReturnValue?mReturnValue->clone(in):0, mErrorToken);
+    }
+
     vipir::Value* ReturnStatement::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
     {
         vipir::Value* returnValue = nullptr;

@@ -40,6 +40,10 @@ namespace parser
     public:
         ClassDeclaration(bool exported, bool pending, std::string name, std::vector<ClassField> fields, std::vector<ClassMethod> methods, ScopePtr ownScope, lexer::Token token);
 
+        virtual std::vector<ASTNode*> getContained() const override;
+        virtual ASTNodePtr clone(Scope* in) override;
+        virtual Symbol* getSymbol() override;
+
         virtual vipir::Value* codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag) override;
 
         virtual void semanticCheck(diagnostic::Diagnostics& diag, bool& exit, bool statement) override;

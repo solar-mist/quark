@@ -12,18 +12,30 @@
 
 namespace parser
 {
-    VariableExpression::VariableExpression(Scope* scope, std::string name, lexer::Token token)
+    VariableExpression::VariableExpression(Scope* scope, std::string name, lexer::Token token, std::vector<Type*> templateParameters)
         : ASTNode(scope, token)
         , mNames({std::move(name)})
+        , mTemplateParameters(std::move(templateParameters))
         , mIsImplicitThis(false)
     {
     }
 
-    VariableExpression::VariableExpression(Scope* scope, std::vector<std::string> names, lexer::Token token)
+    VariableExpression::VariableExpression(Scope* scope, std::vector<std::string> names, lexer::Token token, std::vector<Type*> templateParameters)
         : ASTNode(scope, token)
         , mNames(std::move(names))
+        , mTemplateParameters(std::move(templateParameters))
         , mIsImplicitThis(false)
     {
+    }
+
+    std::vector<ASTNode*> VariableExpression::getContained() const
+    {
+        return {};
+    }
+
+    ASTNodePtr VariableExpression::clone(Scope* in)
+    {
+        return std::make_unique<VariableExpression>(in, mNames, mErrorToken, mTemplateParameters);
     }
 
     vipir::Value* VariableExpression::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)

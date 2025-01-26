@@ -45,6 +45,7 @@ set(SOURCES
     "source/type/PointerType.cpp"
     "source/type/StructType.cpp"
     "source/type/EnumType.cpp"
+    "source/type/TemplateType.cpp"
     "source/type/ErrorType.cpp"
 
     "source/diagnostic/Diagnostic.cpp"
@@ -88,6 +89,7 @@ set(HEADERS
     "include/type/PointerType.h"
     "include/type/StructType.h"
     "include/type/EnumType.h"
+    "include/type/TemplateType.h"
     "include/type/ErrorType.h"
 
     "include/diagnostic/Diagnostic.h"

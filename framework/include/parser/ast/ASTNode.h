@@ -13,6 +13,7 @@
 
 #include <vipir/IR/IRBuilder.h>
 
+#include <cassert>
 #include <memory>
 
 struct ASTNodeIntrospector;
@@ -31,7 +32,12 @@ namespace parser
 
         Scope* getScope() const { return mScope; }
         Type* getType() const { return mType; }
+        virtual void setTemplateType(Type* templateType, Type* type) { if (mType) { if (mType == templateType) mType = type; mType->replaceWith(templateType, type); } }
         const lexer::Token& getErrorToken() const { return mErrorToken; }
+
+        virtual std::vector<ASTNode*> getContained() const = 0;
+        virtual ASTNodePtr clone(Scope* in) = 0;
+        virtual Symbol* getSymbol() { return nullptr; }
 
         virtual vipir::Value* codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag) = 0;
 
@@ -45,7 +51,7 @@ namespace parser
 
     protected:
         Scope* mScope;
-        Type* mType;
+        Type* mType{nullptr};
 
         lexer::Token mErrorToken;
     };

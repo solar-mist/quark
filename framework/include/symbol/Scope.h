@@ -14,20 +14,46 @@
 #include <vector>
 
 struct Scope;
+namespace parser { struct ASTNode; using ASTNodePtr = std::unique_ptr<ASTNode>; }
+
+struct TemplateParameter
+{
+    std::string name;
+    Type* type;
+};
+
+struct TemplateInstantiation
+{
+    parser::ASTNodePtr body;
+    std::vector<Type*> parameters;
+};
+
+struct TemplateSymbol
+{
+    TemplateSymbol(std::vector<TemplateParameter> parameters, parser::ASTNodePtr body);
+    std::vector<TemplateParameter> parameters;
+    parser::ASTNodePtr body;
+    std::vector<TemplateInstantiation> instantiations;
+};
 
 struct Symbol
 {
-    Symbol(std::string name, Type* type);
+    Symbol(std::string name, Type* type, Scope* owner);
 
     vipir::Value* getLatestValue(vipir::BasicBlock* basicBlock = nullptr);
     vipir::Value* getLatestValue(Scope* scope, vipir::BasicBlock* basicBlock = nullptr);
 
+    Symbol clone(Scope* in);
+
     std::string name;
     Type* type;
+    Scope* owner;
     std::vector<std::pair<vipir::BasicBlock*, vipir::Value*> > values;
     unsigned long id;
     bool pure{ false };
     bool exported;
+
+    std::unique_ptr<TemplateSymbol> templated;
 };
 
 struct Scope
@@ -35,6 +61,8 @@ struct Scope
     Scope(Scope* parent, std::string namespaceName, bool isGlobalScope, Type* currentReturnType = nullptr);
 
     static Scope* GetGlobalScope();
+
+    std::unique_ptr<Scope> clone(Scope* in);
 
     std::vector<std::string> getNamespaces();
 

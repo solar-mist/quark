@@ -15,6 +15,16 @@ namespace parser
     {
     }
 
+    std::vector<ASTNode*> BooleanLiteral::getContained() const
+    {
+        return {};
+    }
+
+    ASTNodePtr BooleanLiteral::clone(Scope* in)
+    {
+        return std::make_unique<BooleanLiteral>(in, mValue, mErrorToken);
+    }
+
     vipir::Value* BooleanLiteral::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
     {
         if (mType->isBooleanType())

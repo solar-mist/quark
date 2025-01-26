@@ -16,6 +16,9 @@ namespace parser
     public:
         IntegerLiteral(Scope* scope, std::uintmax_t value, lexer::Token token);
 
+        virtual std::vector<ASTNode*> getContained() const override;
+        virtual ASTNodePtr clone(Scope* in) override;
+
         virtual vipir::Value* codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag) override;
 
         virtual void semanticCheck(diagnostic::Diagnostics& diag, bool& exit, bool statement) override;

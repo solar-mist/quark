@@ -16,6 +16,16 @@ namespace parser
     {
     }
 
+    std::vector<ASTNode*> StringLiteral::getContained() const
+    {
+        return {};
+    }
+
+    ASTNodePtr StringLiteral::clone(Scope* in)
+    {
+        return std::make_unique<StringLiteral>(in, mValue, mErrorToken);
+    }
+
     vipir::Value* StringLiteral::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
     {
         vipir::GlobalString* string = vipir::GlobalString::Create(module, std::move(mValue));

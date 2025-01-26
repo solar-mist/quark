@@ -16,6 +16,7 @@ public:
     virtual vipir::Type* getVipirType() const override;
     virtual CastLevel castTo(Type* destType) const override;
     virtual std::string getMangleId() const override;
+    virtual Type* replaceWith(Type* from, Type* to) override;
 
     bool isPointerType() const override;
 

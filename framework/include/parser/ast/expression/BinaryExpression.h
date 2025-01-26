@@ -34,6 +34,10 @@ namespace parser
         };
 
         BinaryExpression(Scope* scope, ASTNodePtr left, lexer::TokenType operatorToken, ASTNodePtr right, lexer::Token token);
+        BinaryExpression(Scope* scope, ASTNodePtr left, Operator op, ASTNodePtr right, lexer::Token token);
+
+        virtual std::vector<ASTNode*> getContained() const override;
+        virtual ASTNodePtr clone(Scope* in) override;
 
         virtual vipir::Value* codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag) override;
 

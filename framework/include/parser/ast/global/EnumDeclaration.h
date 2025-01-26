@@ -26,6 +26,9 @@ namespace parser
     public:
         EnumDeclaration(bool exported, bool pending, std::string name, std::vector<EnumField> fields, Type* base, ScopePtr ownScope, lexer::Token token);
 
+        virtual std::vector<ASTNode*> getContained() const override;
+        virtual ASTNodePtr clone(Scope* in) override;
+
         virtual vipir::Value* codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag) override;
 
         virtual void semanticCheck(diagnostic::Diagnostics& diag, bool& exit, bool statement) override;
@@ -36,6 +39,7 @@ namespace parser
     private:
         std::string mName;
         std::vector<EnumField> mFields;
+        Type* mBaseType;
         ScopePtr mOwnScope;
         unsigned long mSymbolId;
     };

@@ -14,6 +14,16 @@ namespace parser
     {
     }
 
+    std::vector<ASTNode*> IntegerLiteral::getContained() const
+    {
+        return {};
+    }
+
+    ASTNodePtr IntegerLiteral::clone(Scope* in)
+    {
+        return std::make_unique<IntegerLiteral>(in, mValue, mErrorToken);
+    }
+
     vipir::Value* IntegerLiteral::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
     {
         return vipir::ConstantInt::Get(module, mValue, mType->getVipirType());

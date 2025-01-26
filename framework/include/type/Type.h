@@ -27,6 +27,7 @@ public:
     virtual CastLevel castTo(Type* destType) const = 0;
     virtual std::string getMangleId() const = 0;
     virtual std::string getImplicitCastWarning(Type* destType) const { return ""; }
+    virtual Type* replaceWith(Type* from, Type* to) { return this; }
 
     virtual bool isIntegerType()  const { return false; }
     virtual bool isVoidType()     const { return false; }
@@ -36,6 +37,7 @@ public:
     virtual bool isStructType()   const { return false; }
     virtual bool isEnumType()     const { return false; }
     virtual bool isObjectType()   const { return true; }
+    virtual bool isTemplateType() const { return false; }
 
     static void Init();
     static bool Exists(const std::string& name);

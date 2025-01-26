@@ -17,6 +17,9 @@ namespace parser
     public:
         MemberAccess(ASTNodePtr structNode, std::string id, bool pointer, Scope* scope, lexer::Token operatorToken, lexer::Token fieldToken);
 
+        virtual std::vector<ASTNode*> getContained() const override;
+        virtual ASTNodePtr clone(Scope* in) override;
+
         virtual vipir::Value* codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag) override;
 
         virtual void semanticCheck(diagnostic::Diagnostics& diag, bool& exit, bool statement) override;

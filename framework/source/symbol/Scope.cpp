@@ -2,12 +2,21 @@
 
 #include "symbol/Scope.h"
 
+#include "parser/ast/ASTNode.h"
+
 #include <algorithm>
 
+TemplateSymbol::TemplateSymbol(std::vector<TemplateParameter> parameters, parser::ASTNodePtr body)
+    : parameters(std::move(parameters))
+    , body(std::move(body))
+{
+}
+
 static unsigned long nextSymbolId = 0;
-Symbol::Symbol(std::string name, Type* type)
+Symbol::Symbol(std::string name, Type* type, Scope* owner)
     : name(name)
     , type(type)
+    , owner(owner)
     , id(nextSymbolId++)
 {
 }
@@ -32,6 +41,16 @@ vipir::Value* Symbol::getLatestValue(vipir::BasicBlock* basicBlock)
     return nullptr;
 }
 
+Symbol Symbol::clone(Scope* in)
+{
+    Symbol ret(name, type, in);
+    ret.exported = exported;
+    ret.pure = pure;
+    if (templated)
+        ret.templated = std::make_unique<TemplateSymbol>(templated->parameters, templated->body->clone(in));
+    return ret;
+}
+
 Scope::Scope(Scope* parent, std::string namespaceName, bool isGlobalScope, Type* currentReturnType)
     : parent(parent)
     , namespaceName(std::move(namespaceName))
@@ -46,6 +65,14 @@ Scope* Scope::GetGlobalScope()
 {
     static Scope globalScope(nullptr, "", true);
     return &globalScope;
+}
+
+std::unique_ptr<Scope> Scope::clone(Scope* in)
+{
+    auto newScope = std::make_unique<Scope>(in, namespaceName, isGlobalScope, currentReturnType);
+    newScope->isPureScope = isPureScope;
+    newScope->owner = owner;
+    return newScope;
 }
 
 std::vector<std::string> Scope::getNamespaces()

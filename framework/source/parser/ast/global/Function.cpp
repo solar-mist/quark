@@ -24,14 +24,63 @@ namespace parser
         , mBody(std::move(body))
         , mOwnScope(std::move(scope))
     {
-        mSymbolId = mScope->symbols.emplace_back(mName, mType).id;
+        mSymbolId = mScope->symbols.emplace_back(mName, mType, mScope).id;
         mScope->getSymbol(mSymbolId)->pure = mPure;
         mScope->getSymbol(mSymbolId)->exported = exported;
         for (auto& argument : mArguments)
         {
-            mOwnScope->symbols.emplace_back(argument.name, argument.type);
+            mOwnScope->symbols.emplace_back(argument.name, argument.type, mOwnScope.get());
         }
         mOwnScope->isPureScope = mPure;
+    }
+
+    void Function::setTemplateType(Type* templateType, Type* type)
+    {
+        std::vector<Type*> argumentTypes;
+        for (auto& argument : mArguments)
+        {
+            if (argument.type == templateType) argument.type = type;
+            argument.type->replaceWith(templateType, type);
+            argumentTypes.push_back(argument.type);
+            mOwnScope->resolveSymbol(argument.name)->type = argument.type;
+        }
+        Type* returnType = static_cast<FunctionType*>(mType)->getReturnType();
+        if (returnType == templateType)
+        {
+            returnType = type;
+        }
+        returnType->replaceWith(templateType, type);
+        mType = FunctionType::Create(returnType, std::move(argumentTypes));
+        mScope->getSymbol(mSymbolId)->type = mType;
+        mOwnScope->currentReturnType = returnType;
+    }
+
+    std::vector<ASTNode*> Function::getContained() const
+    {
+        std::vector<ASTNode*> ret;
+        for (auto& node : mBody)
+        {
+            ret.push_back(node.get());
+        }
+        return ret;
+    }
+
+    ASTNodePtr Function::clone(Scope* in)
+    {
+        auto scope = mOwnScope->clone(in);
+
+        std::vector<ASTNodePtr> bodyClone;
+        bodyClone.reserve(mBody.size());
+        for (auto& node : mBody)
+        {
+            bodyClone.push_back(node->clone(scope.get()));
+        }
+        return std::make_unique<Function>(false, mPure, mName, static_cast<FunctionType*>(mType), mArguments, std::move(bodyClone), std::move(scope), mErrorToken);
+    }
+
+    Symbol* Function::getSymbol()
+    {
+        return mScope->getSymbol(mSymbolId);
     }
 
     vipir::Value* Function::codegen(vipir::IRBuilder& builder, vipir::Module& module, diagnostic::Diagnostics& diag)
