@@ -543,7 +543,6 @@ namespace parser
         auto body = parseGlobal(exported);
         mActiveTemplateParameters.clear();
 
-        // Probably not the best to use .back() here just in case
         auto symbol = body->getSymbol();
         symbol->templated = std::make_unique<TemplateSymbol>(std::move(parameters), std::move(body));
         mTemplateSymbols.push_back(symbol->templated.get());
@@ -720,9 +719,17 @@ namespace parser
             std::vector<Export> invalid;
             for (auto& exp : exports)
             {
-                if (!exp.symbol || !mImportManager.wasExportedTo(std::string(mTokens[0].getStartLocation().file), allImports, exp))
+                bool importedHere = mImportManager.wasExportedTo(std::string(mTokens[0].getStartLocation().file), allImports, exp);
+                if (!exp.symbol || !importedHere)
                 {
                     invalid.push_back(exp);
+                }
+                if (importedHere)
+                {
+                    if (exp.symbol && exp.symbol->templated)
+                    {
+                        mTemplateSymbols.push_back(exp.symbol->templated.get());
+                    }
                 }
             }
             std::function<bool(Scope* scope, Symbol* sym)> erase;
@@ -732,7 +739,8 @@ namespace parser
                 });
                 if (it != scope->symbols.end())
                 {
-                    scope->symbols.erase(it);
+                    it->removed = true;
+                    //scope->symbols.erase(it);
                     return true;
                 }
                 for (auto child : scope->children)
@@ -743,7 +751,9 @@ namespace parser
             };
             for (auto& symbol : invalid)
             {
-                erase(scope.get(), symbol.symbol);
+                if (symbol.symbol)
+                    symbol.symbol->removed = true;
+                //erase(scope.get(), symbol.symbol);
             }
 
             mActiveScope->children.push_back(scope.get());
@@ -751,7 +761,7 @@ namespace parser
             {
                 auto type = static_cast<PendingStructType*>(Type::Get(StructType::MangleName(pendingStructType)));
                 auto sym = scope->resolveSymbol(pendingStructType);
-                if (sym) type->initComplete();
+                if (sym && !sym->removed) type->initComplete();
                 else type->initIncomplete();
             }
 

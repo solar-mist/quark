@@ -18,6 +18,7 @@ Symbol::Symbol(std::string name, Type* type, Scope* owner)
     , type(type)
     , owner(owner)
     , id(nextSymbolId++)
+    , removed(false)
 {
 }
 
@@ -116,7 +117,7 @@ Symbol* Scope::resolveSymbol(std::string name)
     while (current)
     {
         auto it = std::find_if(current->symbols.begin(), current->symbols.end(), [&name](const auto& symbol){
-            return symbol.name == name;
+            return symbol.name == name && !symbol.removed;
         });
 
         if (it != current->symbols.end()) return &*it;
@@ -144,8 +145,13 @@ Symbol* Scope::resolveSymbol(std::vector<std::string> givenNames)
 
 Symbol* Scope::resolveSymbolDown(std::string name)
 {
+    for(auto& n : getNamespaces())
+    {
+        // Wrong namespace, so don't check for symbols
+        if (!n.empty()) return nullptr;
+    }
     auto it = std::find_if(symbols.begin(), symbols.end(), [&name](const auto& symbol){
-        return symbol.name == name;
+        return symbol.name == name && !symbol.removed;
     });
     if (it != symbols.end()) return &*it;
 
@@ -166,7 +172,7 @@ Symbol* Scope::resolveSymbolDown(std::vector<std::string> names)
     {
         // We are in the correct namespace
         auto it = std::find_if(symbols.begin(), symbols.end(), [&names](const auto& symbol){
-            return symbol.name == names.back();
+            return symbol.name == names.back() && !symbol.removed;
         });
         if (it != symbols.end()) return &*it;
     }
@@ -201,15 +207,21 @@ std::vector<Symbol*> Scope::getCandidateFunctions(std::vector<std::string> given
 std::vector<Symbol*> Scope::getCandidateFunctionsDown(std::string name)
 {
     std::vector<Symbol*> candidateFunctions;
+    for(auto& n : getNamespaces())
+    {
+        // Wrong namespace, so don't check for symbols
+        if (!n.empty()) return {};
+    }
+
     auto it = std::find_if(symbols.begin(), symbols.end(), [&name](const auto& symbol){
-        return symbol.name == name;
+        return symbol.name == name && !symbol.removed;
     });
 
     while (it != symbols.end())
     {
         candidateFunctions.push_back(&*it);
         it = std::find_if(it+1, symbols.end(), [&name](const auto& symbol){
-            return symbol.name == name;
+            return symbol.name == name && !symbol.removed;
         });
     }
 
@@ -229,13 +241,13 @@ std::vector<Symbol*> Scope::getCandidateFunctionsDown(std::vector<std::string> n
     {
         // We are in the correct namespace
         auto it = std::find_if(symbols.begin(), symbols.end(), [&names](const auto& symbol){
-            return symbol.name == names.back();
+            return symbol.name == names.back() && !symbol.removed;
         });
         while (it != symbols.end())
         {
             candidateFunctions.push_back(&*it);
             it = std::find_if(it+1, symbols.end(), [&names](const auto& symbol){
-                return symbol.name == names.back();
+                return symbol.name == names.back() && !symbol.removed;
             });
         }
     }

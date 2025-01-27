@@ -1,10 +1,7 @@
-export import test3;
-
 export namespace xyz {
 
 	class Thing {
 		public field: i32;
-		public field3: Thing2;
 
 		func thing5() -> i32 {
 			return field;
@@ -15,12 +12,12 @@ export namespace xyz {
 		}
 	}
 
-	func y(q: i32) -> i32 {
-		return q + 5;
+	template<T: typename>
+	func toI32(arg: T) -> i32 {
+		return cast<i32>(arg);
 	}
+}
 
-    enum guy {
-        qwerty=123,
-        uiop
-    }
+func p() -> i32 {
+	return 0;
 }

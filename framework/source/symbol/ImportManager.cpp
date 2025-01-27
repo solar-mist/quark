@@ -41,6 +41,7 @@ void ImportManager::addPendingStructType(std::vector<std::string> names)
 
 bool ImportManager::wasExportedTo(std::string root, std::vector<Import>& imports, Export& exp)
 {
+    if (exp.symbol && !exp.symbol->exported) return false;
     std::function<bool(std::string)> checkOne;
     checkOne = [&](std::string path) {
         if (path == root) return true;

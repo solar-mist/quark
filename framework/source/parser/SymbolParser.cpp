@@ -4,6 +4,7 @@
 
 #include "type/PointerType.h"
 #include "type/StructType.h"
+#include "type/TemplateType.h"
 
 #include <cinttypes>
 #include <filesystem>
@@ -141,6 +142,15 @@ namespace parser
         Type* type = nullptr;
         if (current().getTokenType() == lexer::TokenType::Identifier)
         {
+            auto it = std::find_if(mActiveTemplateParameters.begin(), mActiveTemplateParameters.end(), [tok=current()](auto& param){
+                return param.name == tok.getText();
+            });
+            if (it != mActiveTemplateParameters.end())
+            {
+                consume();
+                return it->type;
+            }
+
             auto var = parseVariableExpression();
             auto names = var->getNames();
             auto mangled = StructType::MangleName(names);
@@ -201,6 +211,10 @@ namespace parser
 
             case lexer::TokenType::ImportKeyword:
                 parseImport(exported);
+                return nullptr;
+
+            case lexer::TokenType::TemplateKeyword:
+                parseTemplate(exported);
                 return nullptr;
 
             case lexer::TokenType::PureKeyword:
@@ -405,6 +419,43 @@ namespace parser
             functionType, std::move(arguments), std::move(body),
             std::move(scope), std::move(token)
         };
+    }
+
+    void SymbolParser::parseTemplate(bool exported)
+    {
+        consume(); // template
+
+        expectToken(lexer::TokenType::LessThan);
+        consume();
+
+        std::vector<TemplateParameter> parameters;
+        while (current().getTokenType() != lexer::TokenType::GreaterThan)
+        {
+            expectToken(lexer::TokenType::Identifier);
+            std::string name = std::string(consume().getText());
+
+            expectToken(lexer::TokenType::Colon);
+            consume();
+
+            expectToken(lexer::TokenType::TypenameKeyword);
+            consume();
+            auto type = TemplateType::Create(name);
+            parameters.push_back(TemplateParameter{std::move(name), type});
+
+            if (current().getTokenType() != lexer::TokenType::GreaterThan)
+            {
+                expectToken(lexer::TokenType::Comma);
+                consume();
+            }
+        }
+        consume();
+        
+        mActiveTemplateParameters = parameters;
+        auto body = parseGlobal(exported);
+        mActiveTemplateParameters.clear();
+
+        auto symbol = body->getSymbol();
+        symbol->templated = std::make_unique<TemplateSymbol>(std::move(parameters), std::move(body));
     }
 
     void SymbolParser::parseImport(bool exported)

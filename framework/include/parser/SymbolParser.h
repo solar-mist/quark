@@ -45,6 +45,7 @@ namespace parser
         bool mExportBlock;
         ImportManager& mImportManager;
 
+        std::vector<TemplateParameter> mActiveTemplateParameters;
         std::function<void(ASTNodePtr&)> mInsertNodeFn;
 
         lexer::Token current() const;
@@ -60,6 +61,7 @@ namespace parser
         FunctionPtr parseFunction(bool pure, bool exported);
         ClassDeclarationPtr parseClassDeclaration(bool exported);
         ClassMethod parseClassMethod(bool priv, bool pure);
+        void parseTemplate(bool exported);
         void parseImport(bool exported);
         NamespacePtr parseNamespace(bool exported);
         EnumDeclarationPtr parseEnum(bool exported);

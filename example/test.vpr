@@ -1,25 +1,11 @@
 import test.test2;
 
-namespace test {
-    func abc() -> i32 {
-        return xyz::y(1);
-    }
-}
-
-template<T: typename>
-func toI32(arg: T) -> i32 {
-    return cast<i32>(arg);
-}
-
 func main() -> i32 {
     let a: i64 = 6;
-    toI32<i64>(a);
-
-    let z: xyz::guy = xyz::guy::qwerty;
+    xyz::toI32<i64>(a);
 
     let x: xyz::Thing;
     let y: xyz::Thing* = &x;
-    x.field3.field2 = cast<i32>(z);
-    x.field = toI32<i64>(a);
+    x.field = xyz::toI32<i64>(a);
     return y->thing();
 }

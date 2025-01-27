@@ -226,6 +226,7 @@ namespace parser
                 else if (var->mTemplateParameters.size() > 0)
                 {
                     auto symbol = mScope->resolveSymbol(var->getNames());
+                    if (!symbol) return nullptr; // Error will be reported in VariableExpression
                     auto it = std::find_if(symbol->templated->instantiations.begin(), symbol->templated->instantiations.end(), [&var](auto& inst){
                         return inst.parameters == var->mTemplateParameters;
                     });

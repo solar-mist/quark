@@ -45,6 +45,8 @@ struct Symbol
 
     Symbol clone(Scope* in);
 
+    bool removed; // We don't want to actually remove these because there might be references to it
+
     std::string name;
     Type* type;
     Scope* owner;
