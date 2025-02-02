@@ -46,6 +46,7 @@ namespace parser
         ImportManager& mImportManager;
 
         std::vector<TemplateParameter> mActiveTemplateParameters;
+        std::vector<TemplateSymbol*> mTemplateSymbols;
         std::function<void(ASTNodePtr&)> mInsertNodeFn;
 
         lexer::Token current() const;

@@ -6,9 +6,11 @@
 
 #include <algorithm>
 
-TemplateSymbol::TemplateSymbol(std::vector<TemplateParameter> parameters, parser::ASTNodePtr body)
+TemplateSymbol::TemplateSymbol(std::vector<TemplateParameter> parameters, parser::ASTNodePtr body, int symbolId, Scope* in)
     : parameters(std::move(parameters))
     , body(std::move(body))
+    , symbolId(symbolId)
+    , in(in)
 {
 }
 
@@ -48,7 +50,7 @@ Symbol Symbol::clone(Scope* in)
     ret.exported = exported;
     ret.pure = pure;
     if (templated)
-        ret.templated = std::make_unique<TemplateSymbol>(templated->parameters, templated->body->clone(in));
+        ret.templated = std::make_unique<TemplateSymbol>(templated->parameters, templated->body->clone(in), ret.id, in);
     return ret;
 }
 
@@ -89,7 +91,7 @@ std::vector<std::string> Scope::getNamespaces()
     return namespaces;
 }
 
-StructType* Scope::findOwner()
+Type* Scope::findOwner()
 {
     Scope* current = this;
     while (current)
@@ -237,6 +239,7 @@ std::vector<Symbol*> Scope::getCandidateFunctionsDown(std::vector<std::string> n
 {
     std::vector<Symbol*> candidateFunctions;
     auto namespaces = getNamespaces();
+    std::erase(namespaces, "");
     if (std::equal(namespaces.begin(), namespaces.end(), names.begin(), names.end() - 1))
     {
         // We are in the correct namespace

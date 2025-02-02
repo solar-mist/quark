@@ -42,8 +42,15 @@ namespace parser
     {
         if (mIsImplicitThis)
         {
+            auto scopeOwner = mScope->findOwner();
+            StructType* structType = nullptr;
+            
+            if ((structType = dynamic_cast<StructType*>(scopeOwner)));
+            else if (auto pending = dynamic_cast<PendingStructType*>(scopeOwner))
+                structType = pending->get();
+            
             vipir::Value* self = mScope->resolveSymbol("this")->getLatestValue();
-            vipir::Value* gep = builder.CreateStructGEP(self, mScope->findOwner()->getFieldOffset(mNames.back()));
+            vipir::Value* gep = builder.CreateStructGEP(self, structType->getFieldOffset(mNames.back()));
             return builder.CreateLoad(gep);
         }
 
@@ -74,9 +81,16 @@ namespace parser
     
     void VariableExpression::typeCheck(diagnostic::Diagnostics& diag, bool& exit)
     {
-        if (mScope->findOwner())
+        auto scopeOwner = mScope->findOwner();
+        StructType* structType = nullptr;
+        
+        if ((structType = dynamic_cast<StructType*>(scopeOwner)));
+        else if (auto pending = dynamic_cast<PendingStructType*>(scopeOwner))
+            structType = pending->get();
+
+        if (structType)
         {
-            auto structField = mScope->findOwner()->getField(mNames.back());
+            auto structField = structType->getField(mNames.back());
             if (structField)
             {
                 mType = structField->type;
@@ -85,7 +99,7 @@ namespace parser
             }
             else
             {
-                auto structMethod = mScope->findOwner()->getMethod(mNames.back());
+                auto structMethod = structType->getMethod(mNames.back());
                 if (structMethod)
                 {
                     auto functionType = static_cast<FunctionType*>(structMethod->type);

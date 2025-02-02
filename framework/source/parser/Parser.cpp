@@ -15,14 +15,43 @@
 
 namespace parser
 {
-    Parser::Parser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, ImportManager& importManager, Scope* globalScope)
+    Parser::Parser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, ImportManager& importManager, Scope* globalScope, bool isImporter)
         : mTokens(tokens)
         , mPosition(0)
         , mDiag(diag)
         , mActiveScope(globalScope)
         , mExportBlock(false)
         , mImportManager(importManager)
+        , mIsImporter(isImporter)
     {
+    }
+
+    std::vector<std::filesystem::path> Parser::findImports()
+    {
+        std::vector<std::filesystem::path> ret;
+
+        while (current().getTokenType() == lexer::TokenType::ImportKeyword ||
+              (current().getTokenType() == lexer::TokenType::ExportKeyword && peek(1).getTokenType() == lexer::TokenType::ImportKeyword))
+        {
+            if (current().getTokenType() == lexer::TokenType::ExportKeyword) consume();
+            consume();
+            std::filesystem::path path;
+            while (current().getTokenType() != lexer::TokenType::Semicolon)
+            {
+                expectToken(lexer::TokenType::Identifier);
+                path /= consume().getText();
+
+                if (current().getTokenType() != lexer::TokenType::Semicolon)
+                {
+                    expectToken(lexer::TokenType::Dot);
+                    consume();
+                }
+            }
+            consume();
+            ret.push_back(std::move(path));
+        }
+
+        return ret;
     }
 
     std::vector<ASTNodePtr> Parser::parse()
@@ -195,6 +224,14 @@ namespace parser
             if (auto structType = Type::Get(mangled))
             {
                 type = structType;
+            }
+
+            if (mIsImporter && !type)
+            {
+                // Create an empty pending struct type for now which will be resolved later
+                auto token = peek(-1);
+                auto mangled = StructType::MangleName(names);
+                type = PendingStructType::Create(std::move(token), std::move(mangled), {}, {});
             }
         }
         if (!type) // No struct type was found
@@ -381,7 +418,56 @@ namespace parser
         auto token = consume(); // FuncKeyword
 
         expectToken(lexer::TokenType::Identifier);
-        std::string name = std::string(consume().getText());
+        auto nameToken = consume();
+        std::string name = std::string(nameToken.getText());
+
+        bool templateSpecialization = false;
+        std::vector<Type*> templateSpecializationParameters;
+        TemplateSymbol* templateSpecializationSymbol;
+        // This is a template specialization
+        if (current().getTokenType() == lexer::TokenType::LessThan)
+        {
+            consume();
+            while (current().getTokenType() != lexer::TokenType::GreaterThan)
+            {
+                templateSpecializationParameters.push_back(parseType());
+                if (current().getTokenType() != lexer::TokenType::GreaterThan)
+                {
+                    expectToken(lexer::TokenType::Comma);
+                    consume();
+                }
+            }
+            consume();
+
+            for (auto symbol : mTemplateSymbols)
+            {
+                if (symbol->in->getSymbol(symbol->symbolId)->name == name)
+                {
+                    auto namespaces = mActiveScope->getNamespaces();
+                    auto otherNamespaces = symbol->in->getNamespaces();
+                    std::erase(namespaces, "");
+                    std::erase(otherNamespaces, "");
+                    if (std::equal(namespaces.begin(), namespaces.end(), otherNamespaces.begin(), otherNamespaces.end()))
+                    {
+                        if (symbol->parameters.size() != templateSpecializationParameters.size())
+                        {
+                            mDiag.reportCompilerError(nameToken.getStartLocation(), nameToken.getEndLocation(), std::format("Template argument list does not match primary template"));
+                            std::exit(1);
+                        }
+                        templateSpecializationSymbol = symbol;
+                        templateSpecialization = true;
+                        name += "T";
+                    }
+                }
+            }
+            if (!templateSpecialization)
+            {
+                mDiag.reportCompilerError(nameToken.getStartLocation(), nameToken.getEndLocation(), std::format("Could not find templated function '{}{}{}' in scope",
+                    fmt::bold, nameToken.getText(), fmt::defaults
+                ));
+                std::exit(1);
+            }
+        }
 
         std::vector<FunctionArgument> arguments;
         std::vector<Type*> argumentTypes;
@@ -431,7 +517,19 @@ namespace parser
 
         mActiveScope = scope->parent;
 
-        return std::make_unique<Function>(exported, pure, std::move(name), functionType, std::move(arguments), std::move(body), std::move(scope), std::move(token));
+        // If we are importing this function and there are no active templates,
+        // clear the body of the function so it is just a declaration
+        if (mIsImporter && mActiveTemplateParameters.empty()) body.clear();
+        
+        auto func = std::make_unique<Function>(exported, pure, std::move(name), functionType, std::move(arguments), std::move(body), std::move(scope), std::move(token));
+        if (templateSpecialization)
+        {
+            if (!mIsImporter || exported)
+                templateSpecializationSymbol->instantiations.push_back({std::move(func), std::move(templateSpecializationParameters)});
+            return nullptr;
+        }
+        else
+            return func;
     }
 
     NamespacePtr Parser::parseNamespace(bool exported)
@@ -507,6 +605,14 @@ namespace parser
 
         mActiveScope = scope->parent;
 
+        if (mIsImporter)
+        {
+            auto enumDef = std::make_unique<EnumDeclaration>(exported, true, name, std::move(fields), base, std::move(scope), std::move(token));
+            auto names = mActiveScope->getNamespaces();
+            names.push_back(std::move(name));
+            mImportManager.addPendingStructType(std::move(names));
+            return enumDef;
+        }
         return std::make_unique<EnumDeclaration>(exported, false, std::move(name), std::move(fields), base, std::move(scope), std::move(token));
     }
 
@@ -544,7 +650,7 @@ namespace parser
         mActiveTemplateParameters.clear();
 
         auto symbol = body->getSymbol();
-        symbol->templated = std::make_unique<TemplateSymbol>(std::move(parameters), std::move(body));
+        symbol->templated = std::make_unique<TemplateSymbol>(std::move(parameters), std::move(body), symbol->id, symbol->owner);
         mTemplateSymbols.push_back(symbol->templated.get());
     }
 
@@ -614,6 +720,15 @@ namespace parser
             std::erase(pendings, pendingType);
         }
         
+        if (mIsImporter)
+        {
+            auto classDef = std::make_unique<ClassDeclaration>(exported, true, name, std::move(fields), std::move(methods), std::move(scope), std::move(token));
+            std::vector<std::string> names = mActiveScope->getNamespaces();
+            names.push_back(std::move(name));
+            mImportManager.addPendingStructType(std::move(names));
+            return classDef;
+        }
+
         auto classDef = std::make_unique<ClassDeclaration>(exported, false, std::move(name), std::move(fields), std::move(methods), std::move(scope), std::move(token));
         if (pendingType) pendingType->initComplete();
         return classDef;
@@ -668,6 +783,8 @@ namespace parser
 
         mActiveScope = scope->parent;
 
+        if (mIsImporter) body.clear();
+
         return ClassMethod{
             priv, pure, std::move(name),
             functionType, std::move(arguments), std::move(body),
@@ -692,6 +809,7 @@ namespace parser
             }
         }
         consume();
+        if (mIsImporter) return;
 
         std::vector<Import> allImports;
         mImportManager.collectAllImports(path, mTokens[0].getStartLocation().file, allImports);
@@ -732,28 +850,12 @@ namespace parser
                     }
                 }
             }
-            std::function<bool(Scope* scope, Symbol* sym)> erase;
-            erase = [&erase](Scope* scope, Symbol* sym){
-                auto it = std::find_if(scope->symbols.begin(), scope->symbols.end(), [sym](Symbol& symbol) {
-                    return &symbol == sym;
-                });
-                if (it != scope->symbols.end())
-                {
-                    it->removed = true;
-                    //scope->symbols.erase(it);
-                    return true;
-                }
-                for (auto child : scope->children)
-                {
-                    if (erase(child, sym)) return true;
-                }
-                return false;
-            };
             for (auto& symbol : invalid)
             {
                 if (symbol.symbol)
+                {
                     symbol.symbol->removed = true;
-                //erase(scope.get(), symbol.symbol);
+                }
             }
 
             mActiveScope->children.push_back(scope.get());

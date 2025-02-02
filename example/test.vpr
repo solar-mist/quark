@@ -2,10 +2,10 @@ import test.test2;
 
 func main() -> i32 {
     let a: i64 = 6;
-    xyz::toI32<i64>(a);
+    toI32<i64>(a);
 
     let x: xyz::Thing;
     let y: xyz::Thing* = &x;
-    x.field = xyz::toI32<i64>(a);
+    x.field = toI32<i32>(a);
     return y->thing();
 }

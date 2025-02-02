@@ -84,7 +84,7 @@ namespace parser
                 method.ownScope->symbols.emplace_back(argument.name, argument.type, method.ownScope.get());
             }
             method.ownScope->isPureScope = method.pure;
-            method.ownScope->owner = static_cast<StructType*>(thisType);
+            method.ownScope->owner = thisType;
         }
     }
 

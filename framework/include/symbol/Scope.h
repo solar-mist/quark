@@ -14,6 +14,8 @@
 #include <vector>
 
 struct Scope;
+struct Symbol;
+struct Export;
 namespace parser { struct ASTNode; using ASTNodePtr = std::unique_ptr<ASTNode>; }
 
 struct TemplateParameter
@@ -26,14 +28,17 @@ struct TemplateInstantiation
 {
     parser::ASTNodePtr body;
     std::vector<Type*> parameters;
+    Export* exp;
 };
 
 struct TemplateSymbol
 {
-    TemplateSymbol(std::vector<TemplateParameter> parameters, parser::ASTNodePtr body);
+    TemplateSymbol(std::vector<TemplateParameter> parameters, parser::ASTNodePtr body, int symbolId, Scope* in);
     std::vector<TemplateParameter> parameters;
     parser::ASTNodePtr body;
     std::vector<TemplateInstantiation> instantiations;
+    int symbolId;
+    Scope* in;
 };
 
 struct Symbol
@@ -68,7 +73,7 @@ struct Scope
 
     std::vector<std::string> getNamespaces();
 
-    StructType* findOwner();
+    Type* findOwner();
 
     Symbol* getSymbol(unsigned long id);
     Symbol* resolveSymbol(std::string name);
@@ -82,7 +87,7 @@ struct Scope
     bool isPureScope;
 
     Type* currentReturnType;
-    StructType* owner;
+    Type* owner;
 
     std::vector<Symbol> symbols;
 

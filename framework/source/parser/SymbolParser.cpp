@@ -254,7 +254,56 @@ namespace parser
         auto token = consume(); // FuncKeyword
 
         expectToken(lexer::TokenType::Identifier);
-        std::string name = std::string(consume().getText());
+        auto nameToken = consume();
+        std::string name = std::string(nameToken.getText());
+
+        bool templateSpecialization = false;
+        std::vector<Type*> templateSpecializationParameters;
+        TemplateSymbol* templateSpecializationSymbol;
+        // This is a template specialization
+        if (current().getTokenType() == lexer::TokenType::LessThan)
+        {
+            consume();
+            while (current().getTokenType() != lexer::TokenType::GreaterThan)
+            {
+                templateSpecializationParameters.push_back(parseType());
+                if (current().getTokenType() != lexer::TokenType::GreaterThan)
+                {
+                    expectToken(lexer::TokenType::Comma);
+                    consume();
+                }
+            }
+            consume();
+            
+            for (auto symbol : mTemplateSymbols)
+            {
+                if (symbol->in->getSymbol(symbol->symbolId)->name == name)
+                {
+                    auto namespaces = mActiveScope->getNamespaces();
+                    auto otherNamespaces = symbol->in->getNamespaces();
+                    std::erase(namespaces, "");
+                    std::erase(otherNamespaces, "");
+                    if (std::equal(namespaces.begin(), namespaces.end(), otherNamespaces.begin(), otherNamespaces.end()))
+                    {
+                        if (symbol->parameters.size() != templateSpecializationParameters.size())
+                        {
+                            mDiag.reportCompilerError(nameToken.getStartLocation(), nameToken.getEndLocation(), std::format("Template argument list does not match primary template"));
+                            std::exit(1);
+                        }
+                        templateSpecializationSymbol = symbol;
+                        templateSpecialization = true;
+                        name += "T";
+                    }
+                }
+            }
+            if (!templateSpecialization)
+            {
+                mDiag.reportCompilerError(nameToken.getStartLocation(), nameToken.getEndLocation(), std::format("Could not find templated function '{}{}{}' in scope",
+                    fmt::bold, nameToken.getText(), fmt::defaults
+                ));
+                std::exit(1);
+            }
+        }
 
         std::vector<FunctionArgument> arguments;
         std::vector<Type*> argumentTypes;
@@ -302,7 +351,12 @@ namespace parser
 
         mActiveScope = scope->parent;
 
-        return std::make_unique<Function>(exported, pure, std::move(name), functionType, std::move(arguments), std::move(body), std::move(scope), std::move(token));
+        auto func = std::make_unique<Function>(exported, pure, std::move(name), functionType, std::move(arguments), std::move(body), std::move(scope), std::move(token));
+        if (templateSpecialization)
+        {
+            templateSpecializationSymbol->instantiations.push_back({std::move(func), std::move(templateSpecializationParameters)});
+        }
+        return func;
     }
 
     ClassDeclarationPtr SymbolParser::parseClassDeclaration(bool exported)
@@ -455,7 +509,8 @@ namespace parser
         mActiveTemplateParameters.clear();
 
         auto symbol = body->getSymbol();
-        symbol->templated = std::make_unique<TemplateSymbol>(std::move(parameters), std::move(body));
+        symbol->templated = std::make_unique<TemplateSymbol>(std::move(parameters), std::move(body), symbol->id, symbol->owner);
+        mTemplateSymbols.push_back(symbol->templated.get());
     }
 
     void SymbolParser::parseImport(bool exported)

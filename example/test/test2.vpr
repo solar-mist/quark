@@ -11,13 +11,17 @@ export namespace xyz {
 			return thing5();
 		}
 	}
-
-	template<T: typename>
-	func toI32(arg: T) -> i32 {
-		return cast<i32>(arg);
-	}
 }
 
 func p() -> i32 {
 	return 0;
+}
+
+export template<T: typename>
+func toI32(arg: T) -> i32 {
+	return cast<i32>(arg);
+}
+
+export func toI32<i32>(arg: i32) -> i32 {
+	return 999;
 }

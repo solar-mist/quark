@@ -212,7 +212,13 @@ namespace parser
                 }
                 if (var->isImplicitMember())
                 {
-                    auto structType = mScope->findOwner();
+                    auto scopeOwner = mScope->findOwner();
+                    StructType* structType = nullptr;
+                    
+                    if ((structType = dynamic_cast<StructType*>(scopeOwner)));
+                    else if (auto pending = dynamic_cast<PendingStructType*>(scopeOwner))
+                        structType = pending->get();
+
                     auto names = structType->getNames();
                     names.push_back(var->getName());
                     candidateFunctions = mScope->getCandidateFunctions(names);

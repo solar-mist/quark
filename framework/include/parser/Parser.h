@@ -40,7 +40,9 @@ namespace parser
     {
     friend class ::ASTNodeIntrospector;
     public:
-        Parser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, ImportManager& importManager, Scope* globalScope);
+        Parser(std::vector<lexer::Token>& tokens, diagnostic::Diagnostics& diag, ImportManager& importManager, Scope* globalScope, bool isImporter = false);
+
+        std::vector<std::filesystem::path> findImports();
 
         std::vector<ASTNodePtr> parse();
         std::vector<TemplateSymbol*> getTemplatedSymbols();
@@ -55,6 +57,7 @@ namespace parser
 
         bool mExportBlock;
         ImportManager& mImportManager;
+        bool mIsImporter;
 
         std::vector<TemplateParameter> mActiveTemplateParameters;
         std::vector<TemplateSymbol*> mTemplateSymbols;

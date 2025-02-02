@@ -73,7 +73,15 @@ namespace parser
         mStruct->semanticCheck(diag, exit, statement);
 
         auto structField = mStructType->getField(mId);
-        if (structField && structField->priv && mStructType != mScope->findOwner())
+
+        auto scopeOwner = mScope->findOwner();
+        StructType* structType = nullptr;
+        
+        if ((structType = dynamic_cast<StructType*>(scopeOwner)));
+        else if (auto pending = dynamic_cast<PendingStructType*>(scopeOwner))
+            structType = pending->get();
+
+        if (structField && structField->priv && mStructType != structType)
         {
             diag.reportCompilerError(mErrorToken.getStartLocation(), mErrorToken.getEndLocation(), std::format("'{}{}{}' is a private member of class '{}{}{}",
                 fmt::bold, mId, fmt::defaults,
@@ -82,7 +90,7 @@ namespace parser
             exit = true;
         }
         auto structMethod = mStructType->getMethod(mId);
-        if (structMethod && structMethod->priv && mStructType != mScope->findOwner())
+        if (structMethod && structMethod->priv && mStructType != structType)
         {
             diag.reportCompilerError(mErrorToken.getStartLocation(), mErrorToken.getEndLocation(), std::format("'{}{}{}' is a private member of class '{}{}{}",
                 fmt::bold, mId, fmt::defaults,
